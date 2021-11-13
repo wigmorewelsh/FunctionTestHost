@@ -31,7 +31,8 @@ namespace FunctionTestHost
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGrpcService<GreeterService>();
+                endpoints.MapGrpcService<FunctionRpcService>();
+                endpoints.MapGrpcService<FunctionMetadataService>();
 
                 endpoints.MapGet("/",
                     async context =>

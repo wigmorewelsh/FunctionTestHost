@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 using AzureFunctionsRpcMessages;
 using Mono.Cecil;
 
@@ -92,19 +91,6 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             }
 
             return functions;
-        }
-        
-        [Serializable]
-        internal class FunctionsMetadataGenerationException: Exception
-        {
-            public FunctionsMetadataGenerationException() { }
-
-            internal FunctionsMetadataGenerationException(string message): base(message) { }
-
-            internal FunctionsMetadataGenerationException(string message, Exception innerException) : base(message, innerException) { }
-        
-            protected FunctionsMetadataGenerationException(SerializationInfo info, StreamingContext context)
-                : base(info, context) { }
         }
 
         internal IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(ModuleDefinition module)
