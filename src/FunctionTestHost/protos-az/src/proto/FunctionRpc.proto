@@ -1,11 +1,11 @@
 syntax = "proto3";
 // protobuf vscode extension: https://marketplace.visualstudio.com/items?itemName=zxh404.vscode-proto3
 
-option java_multiple_files = true;
-option java_package = "com.microsoft.azure.functions.rpc.messages";
-option java_outer_classname = "FunctionProto";
-option csharp_namespace = "Microsoft.Azure.WebJobs.Script.Grpc.Messages";
-option go_package ="github.com/Azure/azure-functions-go-worker/internal/rpc";
+//option java_multiple_files = true;
+//option java_package = "com.microsoft.azure.functions.rpc.messages";
+//option java_outer_classname = "FunctionProto";
+//option csharp_namespace = "Microsoft.Azure.WebJobs.Script.Grpc.Messages";
+//option go_package = "github.com/Azure/azure-functions-go-worker/internal/rpc";
 
 package AzureFunctionsRpcMessages;
 
@@ -15,7 +15,7 @@ import "shared/NullableTypes.proto";
 
 // Interface exported by the server.
 service FunctionRpc {
- rpc EventStream (stream StreamingMessage) returns (stream StreamingMessage) {}
+  rpc EventStream (stream StreamingMessage) returns (stream StreamingMessage) {}
 }
 
 message StreamingMessage {
@@ -26,7 +26,7 @@ message StreamingMessage {
   oneof content {
 
     // Worker initiates stream
-    StartStream start_stream = 20; 
+    StartStream start_stream = 20;
 
     // Host sends capabilities/init data to worker
     WorkerInitRequest worker_init_request = 17;
@@ -49,12 +49,12 @@ message StreamingMessage {
 
     // Worker requests a desired action (restart worker, reload function)
     WorkerActionResponse worker_action_response = 7;
-    
+
     // Host sends required metadata to worker to load function
     FunctionLoadRequest function_load_request = 8;
     // Worker responds after loading with the load result
     FunctionLoadResponse function_load_response = 9;
-    
+
     // Host requests a given invocation
     InvocationRequest invocation_request = 4;
 
@@ -152,7 +152,7 @@ message WorkerTerminate {
 message FileChangeEventRequest {
   // Types of File change operations (See link for more info: https://msdn.microsoft.com/en-us/library/t6xf43e0(v=vs.110).aspx)
   enum Type {
-	  Unknown = 0;
+    Unknown = 0;
     Created = 1;
     Deleted = 2;
     Changed = 4;
@@ -177,7 +177,7 @@ message WorkerActionResponse {
     Restart = 0;
     Reload = 1;
   }
-  
+
   // action for this response
   Action action = 1;
 
@@ -248,7 +248,7 @@ message RpcFunctionMetadata {
 
   // base directory for the Function
   string directory = 1;
-  
+
   // Script file specified
   string script_file = 2;
 
@@ -285,14 +285,14 @@ message InvocationRequest {
 
 // Host sends ActivityId, traceStateString and Tags from host
 message RpcTraceContext {
-	// This corresponds to Activity.Current?.Id
-	string trace_parent = 1;
+  // This corresponds to Activity.Current?.Id
+  string trace_parent = 1;
 
-	// This corresponds to Activity.Current?.TraceStateString
-	string trace_state = 2;
+  // This corresponds to Activity.Current?.TraceStateString
+  string trace_state = 2;
 
-	// This corresponds to Activity.Current?.Tags
-	map<string, string> attributes = 3;
+  // This corresponds to Activity.Current?.Tags
+  map<string, string> attributes = 3;
 }
 
 // Host sends retry context for a function invocation
@@ -412,20 +412,20 @@ message ParameterBinding {
 
 // Used to describe a given binding on load
 message BindingInfo {
-    // Indicates whether it is an input or output binding (or a fancy inout binding)
-    enum Direction {
-      in = 0;
-      out = 1;
-      inout = 2;
-    }
+  // Indicates whether it is an input or output binding (or a fancy inout binding)
+  enum Direction {
+    in = 0;
+    out = 1;
+    inout = 2;
+  }
 
-    // Indicates the type of the data for the binding
-    enum DataType {
-      undefined = 0;
-      string = 1;
-      binary = 2;
-      stream = 3;
-    }
+  // Indicates the type of the data for the binding
+  enum DataType {
+    undefined = 0;
+    string = 1;
+    binary = 2;
+    stream = 3;
+  }
 
   // Type of binding (e.g. HttpTrigger)
   string type = 2;
@@ -453,8 +453,8 @@ message RpcLog {
 
   // Category of the log. Defaults to User if not specified.
   enum RpcLogCategory {
-	User = 0;
-	System = 1;
+    User = 0;
+    System = 1;
   }
 
   // Unique id for invocation (if exists)
@@ -499,10 +499,10 @@ message RpcException {
 message RpcHttpCookie {
   // Enum that lets servers require that a cookie shouldn't be sent with cross-site requests
   enum SameSite {
-      None = 0;
-      Lax = 1;
-      Strict = 2;
-      ExplicitNone = 3;
+    None = 0;
+    Lax = 1;
+    Strict = 2;
+    ExplicitNone = 3;
   }
 
   // Cookie name
@@ -537,17 +537,17 @@ message RpcHttpCookie {
 // TODO - solidify this or remove it
 message RpcHttp {
   string method = 1;
-  string url = 2; 
-  map<string,string> headers = 3;
+  string url = 2;
+  map<string, string> headers = 3;
   TypedData body = 4;
-  map<string,string> params = 10;
+  map<string, string> params = 10;
   string status_code = 12;
-  map<string,string> query = 15;
-  bool enable_content_negotiation= 16;
+  map<string, string> query = 15;
+  bool enable_content_negotiation = 16;
   TypedData rawBody = 17;
   repeated RpcClaimsIdentity identities = 18;
   repeated RpcHttpCookie cookies = 19;
-  map<string,NullableString> nullable_headers = 20;
-  map<string,NullableString> nullable_params = 21;
-  map<string,NullableString> nullable_query = 22;
+  map<string, NullableString> nullable_headers = 20;
+  map<string, NullableString> nullable_params = 21;
+  map<string, NullableString> nullable_query = 22;
 }
