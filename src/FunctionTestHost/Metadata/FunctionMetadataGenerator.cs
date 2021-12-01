@@ -11,8 +11,6 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
 {
     internal class FunctionMetadataGenerator
     {
-        // private readonly IndentableLogger _logger;
-
         // TODO: Verify that we don't need to allow
         // same extensions of different versions. Picking the last version for now.
         // We can also just add all the versions of extensions and then let the
@@ -27,7 +25,6 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
 
         public FunctionMetadataGenerator(Action<TraceLevel, string, string> log)
         {
-            // _logger = new IndentableLogger(log);
             _extensions = new Dictionary<string, string>();
         }
 
@@ -139,8 +136,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                     string declaringTypeName = declaringType.GetReflectionFullName();
                     string assemblyName = declaringType.Module.Assembly.Name.Name;
 
-                    function = CreateSdkFunctionMetadata(functionName, actualMethodName, declaringTypeName,
-                        assemblyName);
+                    function = CreateSdkFunctionMetadata(functionName, actualMethodName, declaringTypeName, assemblyName);
 
                     return true;
                 }
