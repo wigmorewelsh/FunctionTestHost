@@ -1,10 +1,13 @@
 using System.Threading.Tasks;
+using AzureFunctionsRpcMessages;
+using FunctionTestHost.ServiceBusEmulator;
+using Grpc.Core;
 using Orleans;
 using Orleans.Placement;
 
 namespace FunctionTestHost.Actors
 {
-    public interface IFunctionGrain : IGrainWithStringKey
+    public interface IFunctionGrain : IGrainWithStringKey, IQueueSubscriber
     {
         Task Init();
     }
@@ -22,6 +25,11 @@ namespace FunctionTestHost.Actors
         {
             State = FunctionState.Init;
             return Task.CompletedTask;
+        }
+
+        public Task Notification()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }
