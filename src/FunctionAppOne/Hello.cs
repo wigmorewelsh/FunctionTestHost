@@ -6,10 +6,10 @@ using Microsoft.Extensions.Logging;
 
 namespace FunctionAppOne
 {
-    public static class Hello
+    public class Hello
     {
         [Function("Hello")]
-        public static HttpResponseData Run(
+        public HttpResponseData Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req,
             FunctionContext executionContext)
         {

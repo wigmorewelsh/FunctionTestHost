@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FunctionAppOne;
 using FunctionMetadataEndpoint;
 using FunctionTestHost;
 using FunctionTestHost.MetadataClient;
@@ -60,7 +61,7 @@ namespace FunctionTestProject
                         var channel = GrpcChannel.ForAddress(url, new GrpcChannelOptions());
                         return new FunctionRpc.FunctionRpcClient(channel);
                     });
-                    services.AddHostedService<MetadataClientRpc>();
+                    services.AddHostedService<MetadataClientRpc<Hello>>();
                 })
                 .Build();
 
