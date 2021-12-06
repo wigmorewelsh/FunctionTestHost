@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using AzureFunctionsRpcMessages;
 using Mono.Cecil;
 
@@ -33,41 +34,41 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             get { return _extensions; }
         }
 
-        public IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(string assemblyPath,
-            IEnumerable<string> referencePaths)
-        {
-            string sourcePath = Path.GetDirectoryName(assemblyPath);
-            string[] targetAssemblies = Directory.GetFiles(sourcePath, "*.dll");
+        // public IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(string assemblyPath,
+        //     IEnumerable<string> referencePaths)
+        // {
+        //     string sourcePath = Path.GetDirectoryName(assemblyPath);
+        //     string[] targetAssemblies = Directory.GetFiles(sourcePath, "*.dll");
+        //
+        //     var functions = new List<SdkFunctionMetadata>();
+        //
+        //     foreach (var path in targetAssemblies)
+        //     {
+        //         BaseAssemblyResolver resolver = new DefaultAssemblyResolver();
+        //
+        //         foreach (string referencePath in referencePaths.Select(p => Path.GetDirectoryName((string?)p))
+        //             .Distinct())
+        //         {
+        //             resolver.AddSearchDirectory(referencePath);
+        //         }
+        //
+        //         resolver.AddSearchDirectory(Path.GetDirectoryName(path));
+        //
+        //         ReaderParameters readerParams = new ReaderParameters { AssemblyResolver = resolver };
+        //
+        //         var moduleDefinition = ModuleDefinition.ReadModule(path, readerParams);
+        //
+        //         functions.AddRange(GenerateFunctionMetadata(moduleDefinition));
+        //     }
+        //
+        //     return functions;
+        // }
 
+        public IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(Assembly module)
+        {
             var functions = new List<SdkFunctionMetadata>();
 
-            foreach (var path in targetAssemblies)
-            {
-                BaseAssemblyResolver resolver = new DefaultAssemblyResolver();
-
-                foreach (string referencePath in referencePaths.Select(p => Path.GetDirectoryName((string?)p))
-                    .Distinct())
-                {
-                    resolver.AddSearchDirectory(referencePath);
-                }
-
-                resolver.AddSearchDirectory(Path.GetDirectoryName(path));
-
-                ReaderParameters readerParams = new ReaderParameters { AssemblyResolver = resolver };
-
-                var moduleDefinition = ModuleDefinition.ReadModule(path, readerParams);
-
-                functions.AddRange(GenerateFunctionMetadata(moduleDefinition));
-            }
-
-            return functions;
-        }
-
-        internal IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(ModuleDefinition module)
-        {
-            var functions = new List<SdkFunctionMetadata>();
-
-            foreach (TypeDefinition type in module.Types)
+            foreach (Type type in module.GetTypes())
             {
                 var functionsResult = GenerateFunctionMetadata(type).ToArray();
 
@@ -77,11 +78,11 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return functions;
         }
 
-        internal IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(TypeDefinition type)
+        internal IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(Type type)
         {
             var functions = new List<SdkFunctionMetadata>();
 
-            foreach (MethodDefinition method in type.Methods)
+            foreach (MethodInfo method in type.GetMethods())
             {
                 AddFunctionMetadataIfFunction(functions, method);
             }
@@ -89,7 +90,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return functions;
         }
 
-        private void AddFunctionMetadataIfFunction(IList<SdkFunctionMetadata> functions, MethodDefinition method)
+        private void AddFunctionMetadataIfFunction(IList<SdkFunctionMetadata> functions, MethodInfo method)
         {
             if (TryCreateFunctionMetadata(method, out SdkFunctionMetadata? metadata)
                 && metadata != null)
@@ -109,16 +110,16 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                 catch (FunctionsMetadataGenerationException ex)
                 {
                     throw new FunctionsMetadataGenerationException(
-                        $"Failed to generate medata for function '{metadata.Name}' (method '{method.FullName}'): {ex.Message}");
+                        $"Failed to generate medata for function '{metadata.Name}' (method '{method.Name}'): {ex.Message}");
                 }
             }
         }
 
-        private bool TryCreateFunctionMetadata(MethodDefinition method, out SdkFunctionMetadata? function)
+        private bool TryCreateFunctionMetadata(MethodInfo method, out SdkFunctionMetadata? function)
         {
             function = null;
 
-            foreach (CustomAttribute attribute in method.CustomAttributes)
+            foreach (CustomAttributeData attribute in method.GetCustomAttributesData())
             {
                 if (string.Equals(attribute.AttributeType.FullName, Constants.FunctionNameType,
                     StringComparison.Ordinal))
@@ -130,11 +131,11 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                         continue;
                     }
 
-                    TypeDefinition declaringType = method.DeclaringType;
+                    Type declaringType = method.DeclaringType;
 
                     string actualMethodName = method.Name;
-                    string declaringTypeName = declaringType.GetReflectionFullName();
-                    string assemblyName = declaringType.Module.Assembly.Name.Name;
+                    string declaringTypeName = declaringType.FullName;
+                    string assemblyName = declaringType.Module.Assembly.FullName;
 
                     function = CreateSdkFunctionMetadata(functionName, actualMethodName, declaringTypeName, assemblyName);
 
@@ -164,7 +165,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return function;
         }
 
-        private IEnumerable<ExpandoObject> CreateBindingMetadataAndAddExtensions(MethodDefinition method)
+        private IEnumerable<ExpandoObject> CreateBindingMetadataAndAddExtensions(MethodInfo method)
         {
             var bindingMetadata = new List<ExpandoObject>();
 
@@ -174,7 +175,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return bindingMetadata;
         }
 
-        private void AddOutputBindingsAndExtensions(IList<ExpandoObject> bindingMetadata, MethodDefinition method)
+        private void AddOutputBindingsAndExtensions(IList<ExpandoObject> bindingMetadata, MethodInfo method)
         {
             if (!TryAddOutputBindingFromMethod(bindingMetadata, method))
             {
@@ -182,9 +183,9 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             }
         }
 
-        private void AddOutputBindingsFromReturnType(IList<ExpandoObject> bindingMetadata, MethodDefinition method)
+        private void AddOutputBindingsFromReturnType(IList<ExpandoObject> bindingMetadata, MethodInfo method)
         {
-            TypeReference? returnType = GetTaskElementType(method.ReturnType);
+            Type? returnType = GetTaskElementType(method.ReturnType);
 
             if (returnType is not null &&
                 !string.Equals(returnType.FullName, Constants.VoidType, StringComparison.Ordinal))
@@ -195,11 +196,11 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                 }
                 else
                 {
-                    TypeDefinition returnDefinition = returnType.Resolve()
-                                                      ?? throw new FunctionsMetadataGenerationException(
-                                                          $"Couldn't find the type definition '{returnType}' for method '{method.FullName}'");
+                    // TypeDefinition returnDefinition = returnType.Resolve()
+                    //                                   ?? throw new FunctionsMetadataGenerationException(
+                    //                                       $"Couldn't find the type definition '{returnType}' for method '{method.Name}'");
 
-                    bool hasOutputModel = TryAddOutputBindingsFromProperties(bindingMetadata, returnDefinition);
+                    bool hasOutputModel = TryAddOutputBindingsFromProperties(bindingMetadata, returnType);
 
                     // Special handling for HTTP results using POCOs/Types other 
                     // than HttpResponseData. We should improve this to expand this 
@@ -220,12 +221,12 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
         }
 
         private bool TryAddOutputBindingsFromProperties(IList<ExpandoObject> bindingMetadata,
-            TypeDefinition typeDefinition)
+            Type typeDefinition)
         {
             bool foundHttpOutput = false;
             int beforeCount = bindingMetadata.Count;
 
-            foreach (PropertyDefinition property in typeDefinition.Properties)
+            foreach (PropertyInfo property in typeDefinition.GetProperties())
             {
                 if (string.Equals(property.PropertyType.FullName, Constants.HttpResponseType, StringComparison.Ordinal))
                 {
@@ -247,12 +248,12 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return bindingMetadata.Count > beforeCount;
         }
 
-        private void AddOutputBindingFromProperty(IList<ExpandoObject> bindingMetadata, PropertyDefinition property,
+        private void AddOutputBindingFromProperty(IList<ExpandoObject> bindingMetadata, PropertyInfo property,
             string typeName)
         {
             bool foundOutputAttribute = false;
 
-            foreach (CustomAttribute propertyAttribute in property.CustomAttributes)
+            foreach (CustomAttributeData propertyAttribute in property.GetCustomAttributesData())
             {
                 if (IsOutputBindingType(propertyAttribute))
                 {
@@ -265,24 +266,25 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
 
                     foundOutputAttribute = true;
 
+                        // tofix
                     AddOutputBindingMetadata(bindingMetadata, propertyAttribute, property.PropertyType, property.Name);
                     AddExtensionInfo(_extensions, propertyAttribute);
                 }
             }
         }
 
-        private bool TryAddOutputBindingFromMethod(IList<ExpandoObject> bindingMetadata, MethodDefinition method)
+        private bool TryAddOutputBindingFromMethod(IList<ExpandoObject> bindingMetadata, MethodInfo method)
         {
             bool foundBinding = false;
 
-            foreach (CustomAttribute methodAttribute in method.CustomAttributes)
+            foreach (CustomAttributeData methodAttribute in method.GetCustomAttributesData())
             {
                 if (IsOutputBindingType(methodAttribute))
                 {
                     if (foundBinding)
                     {
                         throw new FunctionsMetadataGenerationException(
-                            $"Found multiple Output bindings on method '{method.FullName}'. " +
+                            $"Found multiple Output bindings on method '{method.Name}'. " +
                             "Please use an encapsulation to define the bindings in properties. For more information: https://aka.ms/dotnet-worker-poco-binding.");
                     }
 
@@ -297,11 +299,11 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return foundBinding;
         }
 
-        private void AddInputTriggerBindingsAndExtensions(IList<ExpandoObject> bindingMetadata, MethodDefinition method)
+        private void AddInputTriggerBindingsAndExtensions(IList<ExpandoObject> bindingMetadata, MethodInfo method)
         {
-            foreach (ParameterDefinition parameter in method.Parameters)
+            foreach (ParameterInfo parameter in method.GetParameters())
             {
-                foreach (CustomAttribute parameterAttribute in parameter.CustomAttributes)
+                foreach (CustomAttributeData parameterAttribute in parameter.GetCustomAttributesData())
                 {
                     if (IsFunctionBindingType(parameterAttribute))
                     {
@@ -313,7 +315,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             }
         }
 
-        private static TypeReference? GetTaskElementType(TypeReference typeReference)
+        private static Type? GetTaskElementType(Type typeReference)
         {
             if (typeReference is null ||
                 string.Equals(typeReference.FullName, Constants.TaskType, StringComparison.Ordinal))
@@ -321,13 +323,12 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                 return null;
             }
 
-            if (typeReference.IsGenericInstance
-                && typeReference is GenericInstanceType genericType
+            if (typeReference.IsGenericType
                 && string.Equals(typeReference.GetElementType().FullName, Constants.TaskGenericType,
                     StringComparison.Ordinal))
             {
                 // T from Task<T>
-                return genericType.GenericArguments[0];
+                return typeReference.GetGenericArguments()[0];
             }
             else
             {
@@ -335,14 +336,14 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             }
         }
 
-        private static void AddOutputBindingMetadata(IList<ExpandoObject> bindingMetadata, CustomAttribute attribute,
-            TypeReference parameterType, string? name = null)
+        private static void AddOutputBindingMetadata(IList<ExpandoObject> bindingMetadata, CustomAttributeData attribute,
+            Type parameterType, string? name = null)
         {
             AddBindingMetadata(bindingMetadata, attribute, parameterType, parameterName: name);
         }
 
-        private static void AddBindingMetadata(IList<ExpandoObject> bindingMetadata, CustomAttribute attribute,
-            TypeReference parameterType, string? parameterName)
+        private static void AddBindingMetadata(IList<ExpandoObject> bindingMetadata, CustomAttributeData attribute,
+            Type parameterType, string? parameterName)
         {
             string bindingType = GetBindingType(attribute);
 
@@ -351,8 +352,8 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             bindingMetadata.Add(binding);
         }
 
-        private static ExpandoObject BuildBindingMetadataFromAttribute(CustomAttribute attribute, string bindingType,
-            TypeReference parameterType, string? parameterName)
+        private static ExpandoObject BuildBindingMetadataFromAttribute(CustomAttributeData attribute, string bindingType,
+            Type parameterType, string? parameterName)
         {
             ExpandoObject binding = new ExpandoObject();
 
@@ -436,16 +437,16 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return binding;
         }
 
-        private static bool IsIterableCollection(TypeReference type, out BindingInfo.Types.DataType dataType)
+        private static bool IsIterableCollection(Type type, out BindingInfo.Types.DataType dataType)
         {
             // Array and not byte array 
             bool isArray = type.IsArray &&
                            !string.Equals(type.FullName, Constants.ByteArrayType, StringComparison.Ordinal);
             if (isArray)
             {
-                if (type is TypeSpecification typeSpecification)
+                if (type is Type typeSpecification)
                 {
-                    dataType = GetDataTypeFromType(typeSpecification.ElementType.FullName);
+                    dataType = GetDataTypeFromType(typeSpecification.GetElementType().FullName);
                     return true;
                 }
             }
@@ -491,37 +492,37 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return false;
         }
 
-        private static bool IsOrDerivedFrom(TypeReference type, string interfaceFullName)
+        private static bool IsOrDerivedFrom(Type type, string interfaceFullName)
         {
             bool isType = string.Equals(type.FullName, interfaceFullName, StringComparison.Ordinal);
-            TypeDefinition definition = type.Resolve();
+            Type definition = type;
             return isType || IsDerivedFrom(definition, interfaceFullName);
         }
 
-        private static bool IsDerivedFrom(TypeDefinition definition, string interfaceFullName)
+        private static bool IsDerivedFrom(Type definition, string interfaceFullName)
         {
             var isType = string.Equals(definition.FullName, interfaceFullName, StringComparison.Ordinal);
             return isType || HasInterface(definition, interfaceFullName) || IsSubclassOf(definition, interfaceFullName);
         }
 
-        private static bool HasInterface(TypeDefinition definition, string interfaceFullName)
+        private static bool HasInterface(Type definition, string interfaceFullName)
         {
-            return definition.Interfaces.Any(i =>
-                string.Equals(i.InterfaceType.FullName, interfaceFullName, StringComparison.Ordinal));
+            return definition.GetInterfaces().Any(i =>
+                string.Equals(i.FullName, interfaceFullName, StringComparison.Ordinal));
         }
 
-        private static bool IsSubclassOf(TypeDefinition definition, string interfaceFullName)
+        private static bool IsSubclassOf(Type definition, string interfaceFullName)
         {
             if (definition.BaseType is null)
             {
                 return false;
             }
 
-            TypeDefinition baseType = definition.BaseType.Resolve();
+            Type baseType = definition.BaseType;
             return IsDerivedFrom(baseType, interfaceFullName);
         }
 
-        private static string? ResolveIEnumerableOfTType(TypeReference type, Dictionary<string, string> foundMapping)
+        private static string? ResolveIEnumerableOfTType(Type type, Dictionary<string, string> foundMapping)
         {
             // Base case: 
             // We are at IEnumerable<T> and want to return the most recent resolution of T
@@ -536,13 +537,14 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                 return null;
             }
 
-            TypeDefinition definition = type.Resolve();
-            if (definition.HasGenericParameters && type is GenericInstanceType genericType)
+            Type definition = type;
+            if (definition.IsGenericType)
             {
-                for (int i = 0; i < genericType.GenericArguments.Count(); i++)
+                for (int i = 0; i < definition.GetGenericArguments().Count(); i++)
                 {
-                    string name = genericType.GenericArguments.ElementAt(i).FullName;
-                    string resolvedName = definition.GenericParameters.ElementAt(i).FullName;
+                    // Check this is correct
+                    string name = definition.GetGenericArguments().ElementAt(i).Name;
+                    string resolvedName = definition.GetGenericArguments().ElementAt(i).FullName;
 
                     if (foundMapping.TryGetValue(name, out string firstType))
                     {
@@ -556,8 +558,8 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                 }
             }
 
-            return definition.Interfaces
-                       .Select(i => ResolveIEnumerableOfTType(i.InterfaceType, foundMapping))
+            return definition.GetInterfaces()
+                       .Select(i => ResolveIEnumerableOfTType(i, foundMapping))
                        .FirstOrDefault(name => name is not null)
                    ?? ResolveIEnumerableOfTType(definition.BaseType, foundMapping);
         }
@@ -587,7 +589,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                    || string.Equals(fullName, Constants.ReadOnlyMemoryOfBytes, StringComparison.Ordinal);
         }
 
-        private static string GetBindingType(CustomAttribute attribute)
+        private static string GetBindingType(CustomAttributeData attribute)
         {
             var attributeType = attribute.AttributeType.Name;
 
@@ -608,9 +610,9 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             bindingMetadata.Add((ExpandoObject)returnBinding);
         }
 
-        private static void AddExtensionInfo(IDictionary<string, string> extensions, CustomAttribute attribute)
+        private static void AddExtensionInfo(IDictionary<string, string> extensions, CustomAttributeData attribute)
         {
-            AssemblyDefinition extensionAssemblyDefinition = attribute.AttributeType.Resolve().Module.Assembly;
+            Assembly extensionAssemblyDefinition = attribute.AttributeType.Module.Assembly;
 
             foreach (var assemblyAttribute in extensionAssemblyDefinition.CustomAttributes)
             {
@@ -628,7 +630,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             }
         }
 
-        private static string GetBindingDirection(CustomAttribute attribute)
+        private static string GetBindingDirection(CustomAttributeData attribute)
         {
             if (IsOutputBindingType(attribute))
             {
@@ -638,20 +640,20 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return "In";
         }
 
-        private static bool IsOutputBindingType(CustomAttribute attribute)
+        private static bool IsOutputBindingType(CustomAttributeData attribute)
         {
             return TryGetBaseAttributeType(attribute, Constants.OutputBindingType, out _);
         }
 
-        private static bool IsFunctionBindingType(CustomAttribute attribute)
+        private static bool IsFunctionBindingType(CustomAttributeData attribute)
         {
             return TryGetBaseAttributeType(attribute, Constants.BindingType, out _);
         }
 
-        private static bool TryGetBaseAttributeType(CustomAttribute attribute, string baseType,
-            out TypeReference? baseTypeRef)
+        private static bool TryGetBaseAttributeType(CustomAttributeData attribute, string baseType,
+            out Type? baseTypeRef)
         {
-            baseTypeRef = attribute.AttributeType?.Resolve()?.BaseType;
+            baseTypeRef = attribute.AttributeType?.BaseType;
 
             while (baseTypeRef != null)
             {
@@ -660,7 +662,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                     return true;
                 }
 
-                baseTypeRef = baseTypeRef.Resolve().BaseType;
+                baseTypeRef = baseTypeRef.BaseType;
             }
 
             return false;

@@ -4,14 +4,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Microsoft.VisualBasic;
 using Mono.Cecil;
+using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
 
 namespace Microsoft.Azure.Functions.Worker.Sdk
 {
-      public static class CustomAttributeExtensions
+    public static class CustomAttributeExtensions
     {
-        public static IDictionary<string, object> GetAllDefinedProperties(this CustomAttribute attribute)
+        public static IDictionary<string, object> GetAllDefinedProperties(this CustomAttributeData attribute)
         {
             var properties = new Dictionary<string, object>();
             // To avoid needing to instantiate any types, assume that the constructor
@@ -23,16 +25,19 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             return properties;
         }
 
-        private static IEnumerable<(string, CustomAttributeArgument?)> GetDefaultValues(this CustomAttribute attribute)
+        private static IEnumerable<(string Name, CustomAttributeTypedArgument?)> GetDefaultValues(
+            this CustomAttributeData attribute)
         {
-            return attribute.AttributeType.Resolve().Properties
+            return attribute.AttributeType
+                .GetProperties()
                 .Select(p => (p.Name, p.CustomAttributes
-                    .SingleOrDefault(attr => string.Equals(attr.AttributeType.FullName, Constants.DefaultValueAttributeType, StringComparison.Ordinal))
+                    .SingleOrDefault(attr => string.Equals(attr.AttributeType.FullName,
+                        Constants.DefaultValueAttributeType, StringComparison.Ordinal))
                     ?.ConstructorArguments.SingleOrDefault()))
                 .Where(t => t.Item2 is not null);
         }
 
-        private static void LoadDefaultProperties(IDictionary<string, object> properties, CustomAttribute attribute)
+        private static void LoadDefaultProperties(IDictionary<string, object> properties, CustomAttributeData attribute)
         {
             var propertyDefaults = attribute.GetDefaultValues();
 
@@ -45,9 +50,10 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             }
         }
 
-            private static void LoadConstructorArguments(IDictionary<string, object> properties, CustomAttribute attribute)
+        private static void LoadConstructorArguments(IDictionary<string, object> properties,
+            CustomAttributeData attribute)
         {
-            var constructorParams = attribute.Constructor.Resolve().Parameters;
+            var constructorParams = attribute.Constructor.GetParameters();
             for (int i = 0; i < attribute.ConstructorArguments.Count; i++)
             {
                 var arg = attribute.ConstructorArguments[i];
@@ -61,32 +67,32 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
                     continue;
                 }
 
-                paramValue = GetEnrichedValue(param!.ParameterType, paramValue);             
+                paramValue = GetEnrichedValue(param!.ParameterType, paramValue);
                 properties[paramName] = paramValue!;
             }
         }
 
-        private static void LoadDefinedProperties(IDictionary<string, object> properties, CustomAttribute attribute)
+        private static void LoadDefinedProperties(IDictionary<string, object> properties, CustomAttributeData attribute)
         {
-            foreach (CustomAttributeNamedArgument property in attribute.Properties)
+            foreach (System.Reflection.CustomAttributeNamedArgument property in attribute.NamedArguments)
             {
-                object? propVal = property.Argument.Value;
-                string? propName = property.Name;
+                object? propVal = property.TypedValue.Value;
+                string? propName = property.MemberName;
 
                 if (propVal is null || propName is null)
                 {
                     continue;
                 }
 
-                propVal = GetEnrichedValue(property.Argument.Type, propVal);
+                propVal = GetEnrichedValue(property.TypedValue.ArgumentType, propVal);
 
                 properties[propName] = propVal!;
             }
         }
 
-        private static object? GetEnrichedValue(TypeReference type, object value)
+        private static object? GetEnrichedValue(Type type, object value)
         {
-            if (TryGetEnumName(type.Resolve(), value, out string? enumName))
+            if (TryGetEnumName(type, value, out string? enumName))
             {
                 return enumName;
             }
@@ -101,11 +107,11 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             }
         }
 
-        private static bool TryGetEnumName(TypeDefinition typeDef, object enumValue, out string? enumName)
+        private static bool TryGetEnumName(Type typeDef, object enumValue, out string? enumName)
         {
             if (typeDef.IsEnum)
             {
-                enumName = typeDef.Fields.Single(f => Equals(f.Constant, enumValue)).Name;
+                enumName = typeDef.GetEnumNames().Single(f => Equals(f, enumValue));
                 return true;
             }
 
@@ -114,5 +120,5 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
         }
     }
 
-      // Copy of FunctionMetadata, but using internal type to simplify dependencies.
+    // Copy of FunctionMetadata, but using internal type to simplify dependencies.
 }
