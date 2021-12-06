@@ -6,7 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Protobuf Include="Protos/greet.proto" GrpcServices="Server" />
         <Protobuf Include="protos-az/**/*.proto" GrpcServices="Server" ProtoRoot="protos-az/src/proto" />
         <Protobuf Include="protos/MetadataEndpoint.proto" GrpcServices="Server;Client" ProtoPath="protos-az/src/proto" />
     </ItemGroup>

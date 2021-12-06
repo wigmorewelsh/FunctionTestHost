@@ -15,28 +15,16 @@ service FunctionRpc {
 message StreamingMessage {
   // Used to identify message between host and worker
   string request_id = 1;
+  string worker_id = 2;
 
   // Payload of the message
   oneof content {
-    Ping ping = 2;
-    FunctionsMetadataRequest functions_metadata_request = 29;
-    FunctionMetadataResponses function_metadata_responses = 30;
+    FunctionInit function_init = 10;
 
   }
 }
 
-message Ping {
-  string worker_id = 1;
-}
-
-// Host tells worker it is ready to receive metadata
-message FunctionsMetadataRequest {
-  // base directory for function app
-  string function_app_directory = 1;
-}
-
-// Worker sends function metadata back to host
-message FunctionMetadataResponses {
+message FunctionInit {
   // list of function indexing responses
   repeated FunctionLoadRequest function_load_requests_results = 1;
 
