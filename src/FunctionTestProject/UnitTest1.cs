@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using FunctionAppOne;
 using FunctionMetadataEndpoint;
 using FunctionTestHost;
+using FunctionTestHost.Actors;
 using FunctionTestHost.MetadataClient;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -21,6 +22,8 @@ namespace FunctionTestProject
 {
     public class UnitTest1
     {
+        private const int Port = 20222;
+
         [Fact]
         public async Task Test1()
         {
@@ -28,12 +31,12 @@ namespace FunctionTestProject
                 .UseOrleans(orleans =>
                 {
                     orleans.UseLocalhostClustering();
-                    orleans.ConfigureApplicationParts(parts => parts.AddFromDependencyContext());
+                    orleans.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(FunctionGrain).Assembly));
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.ConfigureKestrel(k =>
-                        k.ListenLocalhost(20222, opt => opt.Protocols = HttpProtocols.Http2)).UseStartup<Startup>();
+                        k.ListenLocalhost(Port, opt => opt.Protocols = HttpProtocols.Http2)).UseStartup<Startup>();
                 })
                 .Build();
 
@@ -45,7 +48,7 @@ namespace FunctionTestProject
                     config.AddInMemoryCollection(new Dictionary<string, string>
                     {
                         ["Host"] = "localhost",
-                        ["Port"] = "20222",
+                        ["Port"] = Port.ToString(),
                         ["WorkerId"] = "123",
                         ["GrpcMaxMessageLength"] = "1024"
                     });

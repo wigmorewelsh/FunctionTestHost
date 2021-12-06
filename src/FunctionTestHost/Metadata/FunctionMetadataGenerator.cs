@@ -19,50 +19,14 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
         private readonly IDictionary<string, string> _extensions;
 
         public FunctionMetadataGenerator()
-            : this((l, m, p) => { })
         {
             _extensions = new Dictionary<string, string>();
         }
-
-        public FunctionMetadataGenerator(Action<TraceLevel, string, string> log)
-        {
-            _extensions = new Dictionary<string, string>();
-        }
-
+     
         public IDictionary<string, string> Extensions
         {
             get { return _extensions; }
         }
-
-        // public IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(string assemblyPath,
-        //     IEnumerable<string> referencePaths)
-        // {
-        //     string sourcePath = Path.GetDirectoryName(assemblyPath);
-        //     string[] targetAssemblies = Directory.GetFiles(sourcePath, "*.dll");
-        //
-        //     var functions = new List<SdkFunctionMetadata>();
-        //
-        //     foreach (var path in targetAssemblies)
-        //     {
-        //         BaseAssemblyResolver resolver = new DefaultAssemblyResolver();
-        //
-        //         foreach (string referencePath in referencePaths.Select(p => Path.GetDirectoryName((string?)p))
-        //             .Distinct())
-        //         {
-        //             resolver.AddSearchDirectory(referencePath);
-        //         }
-        //
-        //         resolver.AddSearchDirectory(Path.GetDirectoryName(path));
-        //
-        //         ReaderParameters readerParams = new ReaderParameters { AssemblyResolver = resolver };
-        //
-        //         var moduleDefinition = ModuleDefinition.ReadModule(path, readerParams);
-        //
-        //         functions.AddRange(GenerateFunctionMetadata(moduleDefinition));
-        //     }
-        //
-        //     return functions;
-        // }
 
         public IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadataWithReferences(Assembly assemblyPath)
         {

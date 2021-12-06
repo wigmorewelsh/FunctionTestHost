@@ -10,18 +10,32 @@ namespace FunctionTestHost
     public class FunctionRpcService : FunctionRpc.FunctionRpcBase
     {
         private readonly IGrainFactory _grainFactory;
+        private readonly ConnectionManager _connectionManager;
 
-        public FunctionRpcService(IGrainFactory grainFactory)
+        public FunctionRpcService(IGrainFactory grainFactory, ConnectionManager connectionManager)
         {
             _grainFactory = grainFactory;
+            _connectionManager = connectionManager;
         }
 
         public override async Task EventStream(IAsyncStreamReader<StreamingMessage> requestStream,
             IServerStreamWriter<StreamingMessage> responseStream, ServerCallContext context)
         {
-            var functionGrain = await SetupFunctionGrain(requestStream);
-            await functionGrain.Init();
+            var (workerId, functionGrain) = await SetupFunctionGrain(requestStream);
+            var channel = _connectionManager.Init(workerId);
 
+            async Task Subscription()
+            {
+                await foreach (var message in channel.ReadAllAsync())
+                {
+                    await responseStream.WriteAsync(message);
+                }
+            }
+
+            var task = Subscription();
+            
+            await functionGrain.Init();
+            
             await responseStream.WriteAsync(new StreamingMessage
             {
                 FunctionLoadRequest = new FunctionLoadRequest
@@ -66,6 +80,7 @@ namespace FunctionTestHost
             });
 
             await StartReading(requestStream);
+            await task;
         }
 
         private async Task StartReading(IAsyncStreamReader<StreamingMessage> requestStream)
@@ -95,14 +110,14 @@ namespace FunctionTestHost
             throw new Exception("Expected StartStream message");
         }
 
-        private async Task<IFunctionGrain> SetupFunctionGrain(IAsyncStreamReader<StreamingMessage> requestStream)
+        private async Task<(string, IFunctionGrain)> SetupFunctionGrain(IAsyncStreamReader<StreamingMessage> requestStream)
         {
             if (await requestStream.MoveNext())
             {
                 var nextMessage = requestStream.Current;
                 if (nextMessage.StartStream is { } initRequest)
                 {
-                    return _grainFactory.GetGrain<IFunctionGrain>(initRequest.WorkerId);
+                    return (initRequest.WorkerId, _grainFactory.GetGrain<IFunctionGrain>(initRequest.WorkerId));
                 }
             }
 
