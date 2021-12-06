@@ -64,6 +64,35 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
         //     return functions;
         // }
 
+        public IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadataWithReferences(Assembly assemblyPath)
+        {
+            var functions = new List<SdkFunctionMetadata>();
+
+            HashSet<Assembly> assemblies = new();
+
+            void ScanAssembly(Assembly assemblyPath)
+            {
+                functions.AddRange(GenerateFunctionMetadata(assemblyPath));
+
+                foreach (var path in assemblyPath.GetReferencedAssemblies())
+                {
+                    var assembly = Assembly.Load(path);
+                    if (assemblies.Contains(assembly)) continue;
+
+                    assemblies.Add(assembly);
+                    functions.AddRange(GenerateFunctionMetadata(assembly));
+                    
+                    ScanAssembly(assembly);
+                }
+            }
+
+            ScanAssembly(assemblyPath);
+
+            return functions;
+        }
+     
+        
+        
         public IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(Assembly module)
         {
             var functions = new List<SdkFunctionMetadata>();
