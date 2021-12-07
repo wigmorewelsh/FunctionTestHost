@@ -10,5 +10,9 @@ TODO
 
 Calling Function from Server Http Endpoint
 ------------------------------------------
-5. Add function grain to registory
+6. Add function grain to registory
+
+Test Server
+-----------
+8. Load each app function in seperate AssemblyLoadContext
 

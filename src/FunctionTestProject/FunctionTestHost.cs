@@ -6,6 +6,7 @@ using FunctionMetadataEndpoint;
 using FunctionTestHost;
 using FunctionTestHost.Actors;
 using FunctionTestHost.MetadataClient;
+using FunctionTestProject.Utils;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Hosting;
 using Xunit;
+using Program = FunctionAppOne.Program;
 
 namespace FunctionTestProject
 {
@@ -50,7 +52,8 @@ namespace FunctionTestProject
 
             _fakeHost.Start();
 
-            _functionHost = new HostBuilder()
+            var builder = HostFactoryResolver.ResolveHostBuilderFactory<IHostBuilder>(typeof(Program).Assembly);
+            _functionHost = builder(Array.Empty<string>())
                 .ConfigureAppConfiguration(config =>
                 {
                     config.AddInMemoryCollection(new Dictionary<string, string>
@@ -61,7 +64,6 @@ namespace FunctionTestProject
                         ["GrpcMaxMessageLength"] = "1024"
                     });
                 })
-                .ConfigureFunctionsWorkerDefaults()
                 .ConfigureServices((host, services) =>
                 {
                     services.Configure<GrpcWorkerStartupOptions>(host.Configuration);

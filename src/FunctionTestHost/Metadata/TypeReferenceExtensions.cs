@@ -1,10 +1,11 @@
-using Mono.Cecil;
+
+using System;
 
 namespace Microsoft.Azure.Functions.Worker.Sdk
 {
     internal static class TypeReferenceExtensions
     {
-        public static string GetReflectionFullName(this TypeReference typeRef)
+        public static string GetReflectionFullName(this Type typeRef)
         {
             return typeRef.FullName.Replace('/', '+');
         }

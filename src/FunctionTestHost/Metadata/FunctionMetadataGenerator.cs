@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using AzureFunctionsRpcMessages;
-using Mono.Cecil;
 
 namespace Microsoft.Azure.Functions.Worker.Sdk
 {

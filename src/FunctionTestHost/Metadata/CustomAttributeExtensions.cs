@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.VisualBasic;
-using Mono.Cecil;
-using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
 
 namespace Microsoft.Azure.Functions.Worker.Sdk
 {
@@ -96,11 +94,12 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
             {
                 return enumName;
             }
-            else if (type.IsArray)
-            {
-                var arrayValue = value as IEnumerable<CustomAttributeArgument>;
-                return arrayValue.Select(p => p.Value).ToArray();
-            }
+            // TODO: Fixme
+            // else if (type.IsArray)
+            // {
+            //     var arrayValue = value as IEnumerable<CustomAttributeArgument>;
+            //     return arrayValue.Select(p => p.Value).ToArray();
+            // }
             else
             {
                 return value;
@@ -111,7 +110,7 @@ namespace Microsoft.Azure.Functions.Worker.Sdk
         {
             if (typeDef.IsEnum)
             {
-                enumName = typeDef.GetEnumNames().Single(f => Equals(f, enumValue));
+                enumName = typeDef.GetEnumName(enumValue);
                 return true;
             }
 

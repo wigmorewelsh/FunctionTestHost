@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using FunctionMetadataEndpoint;
 using FunctionTestHost.Actors;
+using Google.Protobuf;
 using Grpc.Core;
 using Orleans;
 
@@ -17,10 +18,10 @@ namespace FunctionTestHost
         
         public override async Task EventStream(IAsyncStreamReader<StreamingMessage> requestStream, IServerStreamWriter<StreamingMessage> responseStream, ServerCallContext context)
         {
-            await foreach (var message in requestStream.ReadAllAsync())
+            await foreach (var message in requestStream.ReadAllAsync(context.CancellationToken))
             {
                 var grain = _grainFactory.GetGrain<IFunctionGrain>(message.WorkerId);
-                await grain.InitMetadata(message);
+                await grain.InitMetadata(message.ToByteArray());
             }
         }
     }

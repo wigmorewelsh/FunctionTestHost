@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Dynamic;
-using Mono.Collections.Generic;
 
 namespace Microsoft.Azure.Functions.Worker.Sdk
 {

@@ -8,6 +8,6 @@ namespace FunctionTestHost.Actors
     public interface IFunctionGrain : IGrainWithStringKey, IQueueSubscriber
     {
         Task Init();
-        Task InitMetadata(StreamingMessage message);
+        Task InitMetadata(byte[] message);
     }
 }

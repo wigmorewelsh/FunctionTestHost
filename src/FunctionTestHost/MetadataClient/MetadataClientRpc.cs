@@ -27,7 +27,8 @@ namespace FunctionTestHost.MetadataClient
         private readonly FunctionRpc.FunctionRpcClient _client;
         private readonly IOptions<GrpcWorkerStartupOptions> _options;
 
-        public MetadataClientRpc(FunctionMetadataEndpoint.FunctionRpc.FunctionRpcClient client, IOptions<GrpcWorkerStartupOptions> options)
+        public MetadataClientRpc(FunctionMetadataEndpoint.FunctionRpc.FunctionRpcClient client,
+            IOptions<GrpcWorkerStartupOptions> options)
         {
             _client = client;
             _options = options;
@@ -35,7 +36,6 @@ namespace FunctionTestHost.MetadataClient
 
         public async Task UpdateMetadata()
         {
-
             var metadata =
                 new FunctionMetadataGenerator()
                     .GenerateFunctionMetadataWithReferences(typeof(TStartup).Assembly);
@@ -56,16 +56,17 @@ namespace FunctionTestHost.MetadataClient
                     FunctionId = sdkFunctionMetadata.Name,
                     Metadata = new RpcFunctionMetadata
                     {
-                      Name  = sdkFunctionMetadata.Name,
-                      Directory = sdkFunctionMetadata.FunctionDirectory,
-                      EntryPoint = sdkFunctionMetadata.EntryPoint,
-                      IsProxy = false,
-                      ScriptFile = sdkFunctionMetadata.ScriptFile,
-                      Bindings = { bindingInfos }
+                        Name = sdkFunctionMetadata.Name,
+                        // Directory = sdkFunctionMetadata.FunctionDirectory,
+                        EntryPoint = sdkFunctionMetadata.EntryPoint,
+                        IsProxy = false,
+                        ScriptFile = sdkFunctionMetadata.ScriptFile,
+                        Bindings = { bindingInfos }
                     },
                     ManagedDependencyEnabled = false
                 });
             }
+
             await _client.EventStream().RequestStream.WriteAsync(new StreamingMessage
             {
                 WorkerId = _options.Value.WorkerId,

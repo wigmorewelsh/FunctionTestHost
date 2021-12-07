@@ -17,11 +17,16 @@ namespace FunctionTestHost.Actors
         public FunctionGrain(ConnectionManager manager)
         {
             _manager = manager;
-            _grpcChannel = manager.Lookup(this.GetPrimaryKeyString());
+        }
+
+        public override Task OnActivateAsync()
+        {
+            _grpcChannel = _manager.Lookup(this.GetPrimaryKeyString());
+            return Task.CompletedTask;
         }
 
         private FunctionState State = FunctionState.Init;
-        private readonly ChannelWriter<AzureFunctionsRpcMessages.StreamingMessage> _grpcChannel;
+        private ChannelWriter<AzureFunctionsRpcMessages.StreamingMessage> _grpcChannel;
 
         public Task Init()
         {
@@ -29,9 +34,10 @@ namespace FunctionTestHost.Actors
             return Task.CompletedTask;
         }
 
-        public async Task InitMetadata(StreamingMessage message)
+        public async Task InitMetadata(byte[] message)
         {
-            foreach (var loadRequest in message.FunctionInit.FunctionLoadRequestsResults)
+            var messagePar = StreamingMessage.Parser.ParseFrom(message);
+            foreach (var loadRequest in messagePar.FunctionInit.FunctionLoadRequestsResults)
             {
                 await _grpcChannel.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
                 {
