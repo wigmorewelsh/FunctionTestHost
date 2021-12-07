@@ -61,7 +61,7 @@ namespace FunctionTestProject
 
         public async ValueTask DisposeAsync()
         {
-            await _functionHost.StopAsync();
+            await _functionHost.StopAsync(TimeSpan.Zero);
         }
     }
 }

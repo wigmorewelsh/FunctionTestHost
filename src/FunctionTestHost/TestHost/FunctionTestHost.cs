@@ -15,6 +15,7 @@ namespace FunctionTestProject
     {
         private AsyncLock _lock = new();
         private volatile bool _isInit = false;
+        private volatile bool _isDisposed = false;
 
         private IHost _fakeHost;
         private FunctionTestApp<TStartup> _functionHost;
@@ -60,8 +61,13 @@ namespace FunctionTestProject
 
         async ValueTask IAsyncDisposable.DisposeAsync()
         {
+            if(_isDisposed) return;
+            using var _ = await _lock.LockAsync();
+            if(_isDisposed) return;
+
             await _functionHost.DisposeAsync();
-            await _fakeHost.StopAsync(TimeSpan.FromMilliseconds(50));
+            await _fakeHost.StopAsync(TimeSpan.FromMilliseconds(0));
+            _isDisposed = true;
 
         }
     }
