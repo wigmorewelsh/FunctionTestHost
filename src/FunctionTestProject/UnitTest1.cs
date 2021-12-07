@@ -1,14 +1,15 @@
 using System.Threading.Tasks;
+using FunctionAppOne;
 using Grpc.Core;
 using Xunit;
 
 namespace FunctionTestProject
 {
-    public class UnitTest1 : IClassFixture<FunctionTestHost>
+    public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
     {
-        private readonly FunctionTestHost _testHost;
+        private readonly FunctionTestHost<Program> _testHost;
 
-        public UnitTest1(FunctionTestHost testHost)
+        public UnitTest1(FunctionTestHost<Program> testHost)
         {
             _testHost = testHost;
         }

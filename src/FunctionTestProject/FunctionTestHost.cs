@@ -17,11 +17,10 @@ using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Hosting;
 using Xunit;
-using Program = FunctionAppOne.Program;
 
 namespace FunctionTestProject
 {
-    public class FunctionTestHost : IAsyncDisposable, IAsyncLifetime
+    public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
     {
         private AsyncLock _lock = new();
         private volatile bool _isInit = false;
@@ -29,6 +28,7 @@ namespace FunctionTestProject
         private IHost _fakeHost;
         private IHost _functionHost;
         private const int Port = 20222;
+        private const string WorkerId = "123";
 
         public async Task CreateServer()
         {
@@ -52,7 +52,7 @@ namespace FunctionTestProject
 
             _fakeHost.Start();
 
-            var builder = HostFactoryResolver.ResolveHostBuilderFactory<IHostBuilder>(typeof(Program).Assembly);
+            var builder = HostFactoryResolver.ResolveHostBuilderFactory<IHostBuilder>(typeof(TStartup).Assembly);
             _functionHost = builder(Array.Empty<string>())
                 .ConfigureAppConfiguration(config =>
                 {
@@ -60,7 +60,7 @@ namespace FunctionTestProject
                     {
                         ["Host"] = "localhost",
                         ["Port"] = Port.ToString(),
-                        ["WorkerId"] = "123",
+                        ["WorkerId"] = WorkerId,
                         ["GrpcMaxMessageLength"] = "1024"
                     });
                 })

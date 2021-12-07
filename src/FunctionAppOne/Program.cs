@@ -9,8 +9,7 @@ namespace FunctionAppOne
     {
         public static void Main(string[] args)
         {
-            var host = CreateHostBuilder(args)
-                .Build();
+            var host = CreateHostBuilder(args).Build();
 
             host.Run();
         }
