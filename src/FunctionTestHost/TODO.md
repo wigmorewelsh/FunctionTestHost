@@ -15,4 +15,5 @@ Calling Function from Server Http Endpoint
 Test Server
 -----------
 8. Load each app function in seperate AssemblyLoadContext
+9. Ensure test host shuts down correctly
 

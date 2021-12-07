@@ -61,7 +61,8 @@ namespace FunctionTestProject
         async ValueTask IAsyncDisposable.DisposeAsync()
         {
             await _functionHost.DisposeAsync();
-            await _fakeHost.StopAsync();
+            await _fakeHost.StopAsync(TimeSpan.FromMilliseconds(50));
+
         }
     }
 }

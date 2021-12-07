@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using FunctionTestHost.Actors;
@@ -21,12 +22,12 @@ namespace FunctionTestHost
         public override async Task EventStream(IAsyncStreamReader<StreamingMessage> requestStream,
             IServerStreamWriter<StreamingMessage> responseStream, ServerCallContext context)
         {
-            var (workerId, functionGrain) = await SetupFunctionGrain(requestStream);
+            var (workerId, functionGrain) = await SetupFunctionGrain(requestStream, context.CancellationToken);
             var channel = _connectionManager.Init(workerId);
 
             async Task Subscription()
             {
-                await foreach (var message in channel.ReadAllAsync())
+                await foreach (var message in channel.ReadAllAsync(context.CancellationToken))
                 {
                     await responseStream.WriteAsync(message);
                 }
@@ -51,7 +52,7 @@ namespace FunctionTestHost
                 }
             });
 
-            var response = await WaitTillInit(requestStream);
+            var response = await WaitTillInit(requestStream, context.CancellationToken);
 
             await responseStream.WriteAsync(new StreamingMessage
             {
@@ -79,13 +80,14 @@ namespace FunctionTestHost
                 }
             });
 
-            await StartReading(requestStream);
+            await StartReading(requestStream, context.CancellationToken);
             await task;
         }
 
-        private async Task StartReading(IAsyncStreamReader<StreamingMessage> requestStream)
+        private async Task StartReading(IAsyncStreamReader<StreamingMessage> requestStream,
+            CancellationToken contextCancellationToken)
         {
-            while (await requestStream.MoveNext())
+            while (await requestStream.MoveNext(contextCancellationToken))
             {
                 var dd = requestStream.Current;
                 if (dd.InvocationResponse is { } response)
@@ -96,9 +98,10 @@ namespace FunctionTestHost
             }
         }
 
-        private async Task<FunctionLoadResponse> WaitTillInit(IAsyncStreamReader<StreamingMessage> requestStream)
+        private async Task<FunctionLoadResponse> WaitTillInit(IAsyncStreamReader<StreamingMessage> requestStream,
+            CancellationToken contextCancellationToken)
         {
-            while (await requestStream.MoveNext())
+            while (await requestStream.MoveNext(contextCancellationToken))
             {
                 var nextMessage = requestStream.Current;
                 if (nextMessage.FunctionLoadResponse is { } initRequest)
@@ -110,9 +113,10 @@ namespace FunctionTestHost
             throw new Exception("Expected StartStream message");
         }
 
-        private async Task<(string, IFunctionGrain)> SetupFunctionGrain(IAsyncStreamReader<StreamingMessage> requestStream)
+        private async Task<(string, IFunctionGrain)> SetupFunctionGrain(
+            IAsyncStreamReader<StreamingMessage> requestStream, CancellationToken contextCancellationToken)
         {
-            if (await requestStream.MoveNext())
+            if (await requestStream.MoveNext(contextCancellationToken))
             {
                 var nextMessage = requestStream.Current;
                 if (nextMessage.StartStream is { } initRequest)
