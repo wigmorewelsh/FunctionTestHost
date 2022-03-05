@@ -1,7 +1,6 @@
-namespace FunctionTestHost.ServiceBusEmulator
+namespace FunctionTestHost.ServiceBusEmulator;
+
+public class Message
 {
-    public class Message
-    {
-        public int Tag { get; }
-    }
+    public int Tag { get; }
 }

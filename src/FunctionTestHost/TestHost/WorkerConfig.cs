@@ -1,8 +1,7 @@
-namespace FunctionTestProject
+namespace FunctionTestProject;
+
+public class WorkerConfig
 {
-    public class WorkerConfig
-    {
-        public const int Port = 20222;
-        public const string WorkerId = "123";
-    }
+    public const int Port = 20222;
+    public const string WorkerId = "123";
 }

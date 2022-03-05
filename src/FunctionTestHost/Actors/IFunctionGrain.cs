@@ -3,12 +3,11 @@ using FunctionMetadataEndpoint;
 using FunctionTestHost.ServiceBusEmulator;
 using Orleans;
 
-namespace FunctionTestHost.Actors
+namespace FunctionTestHost.Actors;
+
+public interface IFunctionGrain : IGrainWithStringKey, IQueueSubscriber
 {
-    public interface IFunctionGrain : IGrainWithStringKey, IQueueSubscriber
-    {
-        Task Init();
-        Task InitMetadata(byte[] message);
-        Task Call();
-    }
+    Task Init();
+    Task InitMetadata(byte[] message);
+    Task Call();
 }

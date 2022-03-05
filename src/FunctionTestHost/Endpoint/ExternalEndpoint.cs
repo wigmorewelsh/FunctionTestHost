@@ -1,7 +1,6 @@
-namespace FunctionTestHost.Endpoint
+namespace FunctionTestHost.Endpoint;
+
+public class ExternalEndpoint
 {
-    public class ExternalEndpoint
-    {
         
-    }
 }

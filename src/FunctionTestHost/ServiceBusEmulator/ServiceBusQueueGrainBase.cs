@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using Orleans;
 
-namespace FunctionTestHost.ServiceBusEmulator
+namespace FunctionTestHost.ServiceBusEmulator;
+
+public class ServiceBusQueueGrainBase : Grain
 {
-    public class ServiceBusQueueGrainBase : Grain
-    {
-        protected Queue<Message> _queue = new();
-    }
+    protected Queue<Message> _queue = new();
 }

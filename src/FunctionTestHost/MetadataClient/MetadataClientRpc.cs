@@ -7,84 +7,83 @@ using Microsoft.Azure.Functions.Worker.Sdk;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-namespace FunctionTestHost.MetadataClient
+namespace FunctionTestHost.MetadataClient;
+
+public class GrpcWorkerStartupOptions
 {
-    public class GrpcWorkerStartupOptions
+    public string? Host { get; set; }
+
+    public int Port { get; set; }
+
+    public string? WorkerId { get; set; }
+
+    public string? RequestId { get; set; }
+
+    public int GrpcMaxMessageLength { get; set; }
+}
+
+public class MetadataClientRpc<TStartup> : IHostedService
+{
+    private readonly FunctionRpc.FunctionRpcClient _client;
+    private readonly IOptions<GrpcWorkerStartupOptions> _options;
+
+    public MetadataClientRpc(FunctionMetadataEndpoint.FunctionRpc.FunctionRpcClient client,
+        IOptions<GrpcWorkerStartupOptions> options)
     {
-        public string? Host { get; set; }
-
-        public int Port { get; set; }
-
-        public string? WorkerId { get; set; }
-
-        public string? RequestId { get; set; }
-
-        public int GrpcMaxMessageLength { get; set; }
+        _client = client;
+        _options = options;
     }
 
-    public class MetadataClientRpc<TStartup> : IHostedService
+    public async Task UpdateMetadata()
     {
-        private readonly FunctionRpc.FunctionRpcClient _client;
-        private readonly IOptions<GrpcWorkerStartupOptions> _options;
-
-        public MetadataClientRpc(FunctionMetadataEndpoint.FunctionRpc.FunctionRpcClient client,
-            IOptions<GrpcWorkerStartupOptions> options)
+        var metadata =
+            new FunctionMetadataGenerator()
+                .GenerateFunctionMetadataWithReferences(typeof(TStartup).Assembly);
+        var functionLoadRequests = new List<FunctionLoadRequest>();
+        foreach (var sdkFunctionMetadata in metadata)
         {
-            _client = client;
-            _options = options;
-        }
-
-        public async Task UpdateMetadata()
-        {
-            var metadata =
-                new FunctionMetadataGenerator()
-                    .GenerateFunctionMetadataWithReferences(typeof(TStartup).Assembly);
-            var functionLoadRequests = new List<FunctionLoadRequest>();
-            foreach (var sdkFunctionMetadata in metadata)
+            var bindingInfos = new Dictionary<string, BindingInfo>();
+            // TODO: Implement binding metadata
+            // foreach (var binding in sdkFunctionMetadata.Bindings)
+            // {
+            //     bindingInfos[binding["Name"] as string] = new BindingInfo
+            //     {
+            //         
+            //     };
+            // }
+            functionLoadRequests.Add(new FunctionLoadRequest
             {
-                var bindingInfos = new Dictionary<string, BindingInfo>();
-                // TODO: Implement binding metadata
-                // foreach (var binding in sdkFunctionMetadata.Bindings)
-                // {
-                //     bindingInfos[binding["Name"] as string] = new BindingInfo
-                //     {
-                //         
-                //     };
-                // }
-                functionLoadRequests.Add(new FunctionLoadRequest
+                FunctionId = sdkFunctionMetadata.Name,
+                Metadata = new RpcFunctionMetadata
                 {
-                    FunctionId = sdkFunctionMetadata.Name,
-                    Metadata = new RpcFunctionMetadata
-                    {
-                        Name = sdkFunctionMetadata.Name,
-                        // Directory = sdkFunctionMetadata.FunctionDirectory,
-                        EntryPoint = sdkFunctionMetadata.EntryPoint,
-                        IsProxy = false,
-                        ScriptFile = sdkFunctionMetadata.ScriptFile,
-                        Bindings = { bindingInfos }
-                    },
-                    ManagedDependencyEnabled = false
-                });
-            }
-
-            await _client.EventStream().RequestStream.WriteAsync(new StreamingMessage
-            {
-                WorkerId = _options.Value.WorkerId,
-                FunctionInit = new FunctionInit
-                {
-                    FunctionLoadRequestsResults = { functionLoadRequests }
-                }
+                    Name = sdkFunctionMetadata.Name,
+                    // Directory = sdkFunctionMetadata.FunctionDirectory,
+                    EntryPoint = sdkFunctionMetadata.EntryPoint,
+                    IsProxy = false,
+                    ScriptFile = sdkFunctionMetadata.ScriptFile,
+                    Bindings = { bindingInfos }
+                },
+                ManagedDependencyEnabled = false
             });
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        await _client.EventStream().RequestStream.WriteAsync(new StreamingMessage
         {
-            await UpdateMetadata();
-        }
+            WorkerId = _options.Value.WorkerId,
+            FunctionInit = new FunctionInit
+            {
+                FunctionLoadRequestsResults = { functionLoadRequests }
+            }
+        });
+    }
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await UpdateMetadata();
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
     }
 }

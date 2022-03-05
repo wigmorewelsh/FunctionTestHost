@@ -1,13 +1,12 @@
 
 using System;
 
-namespace Microsoft.Azure.Functions.Worker.Sdk
+namespace Microsoft.Azure.Functions.Worker.Sdk;
+
+internal static class TypeReferenceExtensions
 {
-    internal static class TypeReferenceExtensions
+    public static string GetReflectionFullName(this Type typeRef)
     {
-        public static string GetReflectionFullName(this Type typeRef)
-        {
-            return typeRef.FullName.Replace('/', '+');
-        }
+        return typeRef.FullName.Replace('/', '+');
     }
 }

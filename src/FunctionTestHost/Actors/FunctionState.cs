@@ -1,9 +1,8 @@
 using Orleans;
 
-namespace FunctionTestHost.Actors
+namespace FunctionTestHost.Actors;
+
+public enum FunctionState
 {
-    public enum FunctionState
-    {
-        Init, FetchingMetadata, LoadingFunctions, Running
-    }
+    Init, FetchingMetadata, LoadingFunctions, Running
 }

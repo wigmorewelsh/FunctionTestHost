@@ -1,9 +1,8 @@
 using Orleans;
 
-namespace FunctionTestHost.ServiceBusEmulator
+namespace FunctionTestHost.ServiceBusEmulator;
+
+public interface IServiceBusQueueGrain : IGrainWithStringKey, IQueueSubscriber, IBusQueue
 {
-    public interface IServiceBusQueueGrain : IGrainWithStringKey, IQueueSubscriber, IBusQueue
-    {
         
-    }
 }

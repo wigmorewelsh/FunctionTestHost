@@ -1,9 +1,8 @@
 using System;
 
-namespace Orleans.TestingHost
+namespace Orleans.TestingHost;
+
+public interface ITestClusterPortAllocator : IDisposable
 {
-    public interface ITestClusterPortAllocator : IDisposable
-    {
-        ValueTuple<int, int> AllocateConsecutivePortPairs(int numPorts);
-    }
+    ValueTuple<int, int> AllocateConsecutivePortPairs(int numPorts);
 }

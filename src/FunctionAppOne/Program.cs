@@ -3,21 +3,20 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Azure.Functions.Worker.Configuration;
 
-namespace FunctionAppOne
+namespace FunctionAppOne;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
-        {
-            var host = CreateHostBuilder(args).Build();
+        var host = CreateHostBuilder(args).Build();
 
-            host.Run();
-        }
+        host.Run();
+    }
 
-        private static IHostBuilder CreateHostBuilder(string[] args)
-        {
-            return new HostBuilder()
-                .ConfigureFunctionsWorkerDefaults();
-        }
+    private static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return new HostBuilder()
+            .ConfigureFunctionsWorkerDefaults();
     }
 }
