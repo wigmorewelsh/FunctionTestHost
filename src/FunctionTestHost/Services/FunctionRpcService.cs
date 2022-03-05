@@ -28,48 +28,7 @@ public class FunctionRpcService : FunctionRpc.FunctionRpcBase
         var localGrain = _localGrainCatalog.GetGrain(functionGrain.GetGrainIdentity());
         localGrain.SetResponseStream(responseStream);
 
-        await responseStream.WriteAsync(new StreamingMessage
-        {
-            FunctionLoadRequest = new FunctionLoadRequest
-            {
-                FunctionId = "Hello",
-                Metadata = new RpcFunctionMetadata
-                {
-                    IsProxy = false,
-                    ScriptFile = "FunctionAppOne.dll",
-                    Name = "Hello",
-                    EntryPoint = "FunctionAppOne.Hello.Run",
-                }
-            }
-        });
-
         var response = await WaitTillInit(requestStream, context.CancellationToken);
-
-        // await responseStream.WriteAsync(new StreamingMessage
-        // {
-        //     InvocationRequest = new InvocationRequest
-        //     {
-        //         FunctionId = "Hello",
-        //         InvocationId = "123",
-        //         InputData =
-        //         {
-        //             new ParameterBinding
-        //             {
-        //                 Name = "req",
-        //                 Data = new TypedData
-        //                 {
-        //                     Http = new RpcHttp
-        //                     {
-        //                     }
-        //                 }
-        //             }
-        //         },
-        //         TraceContext = new RpcTraceContext
-        //         {
-        //             TraceParent = "123"
-        //         }
-        //     }
-        // });
 
         await StartReading(requestStream, context.CancellationToken);
     }
