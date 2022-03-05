@@ -4,6 +4,7 @@ using FunctionTestHost;
 using FunctionTestHost.Actors;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Orleans;
 using Orleans.Hosting;
@@ -69,6 +70,13 @@ namespace FunctionTestProject
             await _fakeHost.StopAsync(TimeSpan.FromMilliseconds(0));
             _isDisposed = true;
 
+        }
+
+        public async Task CallFunction(string functionName)
+        {
+            var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
+            var funcGrain = factory.GetGrain<IFunctionGrain>(functionName);
+            await funcGrain.Call();
         }
     }
 }

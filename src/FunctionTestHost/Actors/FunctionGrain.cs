@@ -1,23 +1,32 @@
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using Grpc.Core;
 using Orleans;
+using Orleans.Concurrency;
 using Orleans.Placement;
+using Orleans.Runtime;
 using StreamingMessage = FunctionMetadataEndpoint.StreamingMessage;
 
 namespace FunctionTestHost.Actors
 {
     [PreferLocalPlacement]
+    [Reentrant]
     public class FunctionGrain : Grain, IFunctionGrain
     {
         private readonly ConnectionManager _manager;
+        private readonly IGrainActivationContext _context;
 
-        public FunctionGrain(ConnectionManager manager)
+        public FunctionGrain(ConnectionManager manager, IGrainActivationContext context)
         {
             _manager = manager;
+            _context = context;
         }
+
+        public TaskCompletionSource<IServerStreamWriter<AzureFunctionsRpcMessages.StreamingMessage>> ResponseStream = new (TaskCreationOptions.RunContinuationsAsynchronously);
 
         public override Task OnActivateAsync()
         {
@@ -57,6 +66,37 @@ namespace FunctionTestHost.Actors
                     }
                 });
             }
+        }
+
+        public async Task Call()
+        {
+            var stream = await ResponseStream.Task;
+            await stream.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
+            {
+                RequestId = Guid.NewGuid().ToString(),
+                InvocationRequest = new InvocationRequest()
+                {
+                    FunctionId = "Hello",
+                    InvocationId = "123",
+                    InputData =
+                    {
+                        new ParameterBinding
+                        {
+                            Name = "req",
+                            Data = new TypedData
+                            {
+                                Http = new RpcHttp
+                                {
+                                }
+                            }
+                        }
+                    },
+                    TraceContext = new RpcTraceContext
+                    {
+                        TraceParent = "123"
+                    }
+                }
+            });
         }
 
         public Task Notification()

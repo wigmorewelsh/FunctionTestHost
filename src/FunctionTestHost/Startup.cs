@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Orleans.Runtime;
 
 namespace FunctionTestHost
 {
@@ -17,6 +19,9 @@ namespace FunctionTestHost
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<LocalGrainActivator>();
+            services.AddSingleton<IGrainActivator>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
+            services.AddSingleton<ILocalGrainCatalog>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
             services.AddSingleton<ConnectionManager>();
             services.AddGrpc();
         }
@@ -35,6 +40,9 @@ namespace FunctionTestHost
             {
                 endpoints.MapGrpcService<FunctionRpcService>();
                 endpoints.MapGrpcService<FunctionMetadataService>();
+                endpoints.Map("/api/function", async context =>
+                {
+                });
 
                 endpoints.MapGet("/",
                     async context =>

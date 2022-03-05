@@ -12,11 +12,13 @@ namespace FunctionTestHost
     {
         private readonly IGrainFactory _grainFactory;
         private readonly ConnectionManager _connectionManager;
+        private readonly ILocalGrainCatalog _localGrainCatalog;
 
-        public FunctionRpcService(IGrainFactory grainFactory, ConnectionManager connectionManager)
+        public FunctionRpcService(IGrainFactory grainFactory, ConnectionManager connectionManager, ILocalGrainCatalog localGrainCatalog)
         {
             _grainFactory = grainFactory;
             _connectionManager = connectionManager;
+            _localGrainCatalog = localGrainCatalog;
         }
 
         public override async Task EventStream(IAsyncStreamReader<StreamingMessage> requestStream,
@@ -34,9 +36,16 @@ namespace FunctionTestHost
             }
 
             var task = Subscription();
-            
+
             await functionGrain.Init();
-            
+            var localGrain = _localGrainCatalog.GetGrain(functionGrain.GetGrainIdentity());
+            localGrain.SetResponseStream(responseStream);
+
+            // var localReference = await functionGrain.LocalRef();
+            // localReference.Context.Scheduler.QueueTask(new Task(async () => await localReference.Grain.Init()));
+            // localReference.Context.Scheduler.QueueTask(new Task(async () => await localReference.Grain.SetResponse(responseStream)));
+            // await functionGrain.Init();
+
             await responseStream.WriteAsync(new StreamingMessage
             {
                 FunctionLoadRequest = new FunctionLoadRequest
@@ -54,31 +63,31 @@ namespace FunctionTestHost
 
             var response = await WaitTillInit(requestStream, context.CancellationToken);
 
-            await responseStream.WriteAsync(new StreamingMessage
-            {
-                InvocationRequest = new InvocationRequest
-                {
-                    FunctionId = "Hello",
-                    InvocationId = "123",
-                    InputData =
-                    {
-                        new ParameterBinding
-                        {
-                            Name = "req",
-                            Data = new TypedData
-                            {
-                                Http = new RpcHttp
-                                {
-                                }
-                            }
-                        }
-                    },
-                    TraceContext = new RpcTraceContext
-                    {
-                        TraceParent = "123"
-                    }
-                }
-            });
+            // await responseStream.WriteAsync(new StreamingMessage
+            // {
+            //     InvocationRequest = new InvocationRequest
+            //     {
+            //         FunctionId = "Hello",
+            //         InvocationId = "123",
+            //         InputData =
+            //         {
+            //             new ParameterBinding
+            //             {
+            //                 Name = "req",
+            //                 Data = new TypedData
+            //                 {
+            //                     Http = new RpcHttp
+            //                     {
+            //                     }
+            //                 }
+            //             }
+            //         },
+            //         TraceContext = new RpcTraceContext
+            //         {
+            //             TraceParent = "123"
+            //         }
+            //     }
+            // });
 
             await StartReading(requestStream, context.CancellationToken);
             await task;

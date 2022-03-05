@@ -1,3 +1,5 @@
+using Orleans;
+
 namespace FunctionTestHost.Actors
 {
     public enum FunctionState

@@ -9,5 +9,6 @@ namespace FunctionTestHost.Actors
     {
         Task Init();
         Task InitMetadata(byte[] message);
+        Task Call();
     }
 }

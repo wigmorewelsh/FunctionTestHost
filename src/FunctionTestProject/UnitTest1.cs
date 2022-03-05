@@ -19,6 +19,7 @@ namespace FunctionTestProject
         public async Task Test1()
         {
             await _testHost.CreateServer();
+            await _testHost.CallFunction("123");
         }
     }
 }
