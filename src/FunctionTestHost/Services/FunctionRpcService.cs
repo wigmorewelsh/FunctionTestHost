@@ -122,7 +122,7 @@ public class FunctionRpcService : FunctionRpc.FunctionRpcBase
         throw new Exception("Expected StartStream message");
     }
 
-    private async Task<(string, IFunctionGrain)> SetupFunctionGrain(
+    private async Task<(string, IFunctionInstanceGrain)> SetupFunctionGrain(
         IAsyncStreamReader<StreamingMessage> requestStream, CancellationToken contextCancellationToken)
     {
         if (await requestStream.MoveNext(contextCancellationToken))
@@ -130,7 +130,7 @@ public class FunctionRpcService : FunctionRpc.FunctionRpcBase
             var nextMessage = requestStream.Current;
             if (nextMessage.StartStream is { } initRequest)
             {
-                return (initRequest.WorkerId, _grainFactory.GetGrain<IFunctionGrain>(initRequest.WorkerId));
+                return (initRequest.WorkerId, _grainFactory.GetGrain<IFunctionInstanceGrain>(initRequest.WorkerId));
             }
         }
 

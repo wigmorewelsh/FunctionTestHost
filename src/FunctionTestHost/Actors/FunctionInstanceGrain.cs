@@ -15,12 +15,12 @@ namespace FunctionTestHost.Actors;
 
 [PreferLocalPlacement]
 [Reentrant]
-public class FunctionGrain : Grain, IFunctionGrain
+public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 {
     private readonly ConnectionManager _manager;
     private readonly IGrainActivationContext _context;
 
-    public FunctionGrain(ConnectionManager manager, IGrainActivationContext context)
+    public FunctionInstanceGrain(ConnectionManager manager, IGrainActivationContext context)
     {
         _manager = manager;
         _context = context;

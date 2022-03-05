@@ -20,7 +20,7 @@ public class FunctionMetadataService : FunctionRpc.FunctionRpcBase
     {
         await foreach (var message in requestStream.ReadAllAsync(context.CancellationToken))
         {
-            var grain = _grainFactory.GetGrain<IFunctionGrain>(message.WorkerId);
+            var grain = _grainFactory.GetGrain<IFunctionInstanceGrain>(message.WorkerId);
             await grain.InitMetadata(message.ToByteArray());
         }
     }

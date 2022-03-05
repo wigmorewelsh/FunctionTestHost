@@ -7,16 +7,16 @@ namespace FunctionTestHost.Actors;
 public class FunctionGrainContext
 {
     private readonly TaskScheduler _scheduler;
-    private readonly FunctionGrain _functionGrain;
+    private readonly FunctionInstanceGrain _functionInstanceGrain;
 
-    public FunctionGrainContext(TaskScheduler scheduler, FunctionGrain functionGrain)
+    public FunctionGrainContext(TaskScheduler scheduler, FunctionInstanceGrain functionInstanceGrain)
     {
         _scheduler = scheduler;
-        _functionGrain = functionGrain;
+        _functionInstanceGrain = functionInstanceGrain;
     }
 
     public void SetResponseStream(IServerStreamWriter<StreamingMessage> responseStream)
     {
-        _functionGrain.ResponseStream.TrySetResult(responseStream);
+        _functionInstanceGrain.ResponseStream.TrySetResult(responseStream);
     }
 }

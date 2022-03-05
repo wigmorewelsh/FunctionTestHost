@@ -32,7 +32,7 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
             {
                 orleans.UseLocalhostClustering();
                 orleans.ConfigureApplicationParts(parts =>
-                    parts.AddApplicationPart(typeof(FunctionGrain).Assembly));
+                    parts.AddApplicationPart(typeof(FunctionInstanceGrain).Assembly));
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
@@ -76,7 +76,7 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
     {
         await CreateServer();
         var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
-        var funcGrain = factory.GetGrain<IFunctionGrain>(functionName);
+        var funcGrain = factory.GetGrain<IFunctionInstanceGrain>(functionName);
         await funcGrain.Call();
     }
 }

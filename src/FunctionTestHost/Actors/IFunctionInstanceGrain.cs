@@ -5,7 +5,7 @@ using Orleans;
 
 namespace FunctionTestHost.Actors;
 
-public interface IFunctionGrain : IGrainWithStringKey, IQueueSubscriber
+public interface IFunctionInstanceGrain : IGrainWithStringKey, IQueueSubscriber
 {
     Task Init();
     Task InitMetadata(byte[] message);

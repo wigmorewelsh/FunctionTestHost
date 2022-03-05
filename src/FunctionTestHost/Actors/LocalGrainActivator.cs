@@ -19,7 +19,7 @@ public class LocalGrainActivator : DefaultGrainActivator, ILocalGrainCatalog
     public override object Create(IGrainActivationContext context)
     {
         var grain = base.Create(context) as Grain;
-        if (grain is FunctionGrain functionGrain)
+        if (grain is FunctionInstanceGrain functionGrain)
         {
             context.ObservableLifecycle.Subscribe(this.GetType().FullName + "/Local",
                 GrainLifecycleStage.Activate,
@@ -28,17 +28,17 @@ public class LocalGrainActivator : DefaultGrainActivator, ILocalGrainCatalog
         return grain;
     }
 
-    private Task OnDeactivateAsync(IGrainActivationContext grainActivationContext, FunctionGrain functionGrain)
+    private Task OnDeactivateAsync(IGrainActivationContext grainActivationContext, FunctionInstanceGrain functionInstanceGrain)
     {
         if (grainActivationContext.GrainIdentity != null)
             localGrains.TryRemove(grainActivationContext.GrainIdentity, out var _);
         return Task.CompletedTask;
     }
 
-    private Task OnActivateAsync(IGrainActivationContext grainActivationContext, FunctionGrain functionGrain)
+    private Task OnActivateAsync(IGrainActivationContext grainActivationContext, FunctionInstanceGrain functionInstanceGrain)
     {
         var scheduler = TaskScheduler.Current;
-        localGrains.TryAdd(grainActivationContext.GrainIdentity, new FunctionGrainContext(scheduler, functionGrain));
+        localGrains.TryAdd(grainActivationContext.GrainIdentity, new FunctionGrainContext(scheduler, functionInstanceGrain));
         return Task.CompletedTask;
     }
 
