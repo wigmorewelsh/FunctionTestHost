@@ -17,12 +17,10 @@ namespace FunctionTestHost.Actors;
 [Reentrant]
 public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 {
-    private readonly ConnectionManager _manager;
     private readonly IGrainActivationContext _context;
 
-    public FunctionInstanceGrain(ConnectionManager manager, IGrainActivationContext context)
+    public FunctionInstanceGrain(IGrainActivationContext context)
     {
-        _manager = manager;
         _context = context;
     }
 
@@ -30,7 +28,6 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
     public override Task OnActivateAsync()
     {
-        _grpcChannel = _manager.Lookup(this.GetPrimaryKeyString());
         return Task.CompletedTask;
     }
 

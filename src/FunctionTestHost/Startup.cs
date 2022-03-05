@@ -22,7 +22,6 @@ public class Startup
         services.AddSingleton<LocalGrainActivator>();
         services.AddSingleton<IGrainActivator>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
         services.AddSingleton<ILocalGrainCatalog>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
-        services.AddSingleton<ConnectionManager>();
         services.AddGrpc();
     }
 
