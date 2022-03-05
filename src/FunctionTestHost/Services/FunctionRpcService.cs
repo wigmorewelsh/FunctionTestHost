@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using FunctionTestHost.Actors;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 using Orleans;
 
 namespace FunctionTestHost;
@@ -12,11 +13,13 @@ public class FunctionRpcService : FunctionRpc.FunctionRpcBase
 {
     private readonly IGrainFactory _grainFactory;
     private readonly ILocalGrainCatalog _localGrainCatalog;
+    private readonly ILogger<FunctionRpcService> _logger;
 
-    public FunctionRpcService(IGrainFactory grainFactory, ILocalGrainCatalog localGrainCatalog)
+    public FunctionRpcService(IGrainFactory grainFactory, ILocalGrainCatalog localGrainCatalog, ILogger<FunctionRpcService> logger)
     {
         _grainFactory = grainFactory;
         _localGrainCatalog = localGrainCatalog;
+        _logger = logger;
     }
 
     public override async Task EventStream(IAsyncStreamReader<StreamingMessage> requestStream,
@@ -30,10 +33,13 @@ public class FunctionRpcService : FunctionRpc.FunctionRpcBase
 
         var response = await WaitTillInit(requestStream, context.CancellationToken);
 
-        await StartReading(requestStream, context.CancellationToken);
+        await functionGrain.SetReady();
+
+        await StartReading(requestStream, functionGrain, context.CancellationToken);
     }
 
     private async Task StartReading(IAsyncStreamReader<StreamingMessage> requestStream,
+        IFunctionInstanceGrain functionInstanceGrain,
         CancellationToken contextCancellationToken)
     {
         while (await requestStream.MoveNext(contextCancellationToken))
@@ -41,8 +47,7 @@ public class FunctionRpcService : FunctionRpc.FunctionRpcBase
             var dd = requestStream.Current;
             if (dd.InvocationResponse is { } response)
             {
-                var gg = response;
-                return;
+                await functionInstanceGrain.Response(response);
             }
         }
     }
@@ -56,6 +61,11 @@ public class FunctionRpcService : FunctionRpc.FunctionRpcBase
             if (nextMessage.FunctionLoadResponse is { } initRequest)
             {
                 return initRequest;
+            }
+
+            if (nextMessage.RpcLog is { } rpcLog)
+            {
+                _logger.LogInformation(rpcLog.Message);
             }
         }
 

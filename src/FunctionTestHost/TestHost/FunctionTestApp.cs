@@ -38,7 +38,7 @@ public class FunctionTestApp<TStartup> : IAsyncDisposable
                     ["Host"] = "localhost",
                     ["Port"] = WorkerConfig.Port.ToString(),
                     ["WorkerId"] = WorkerConfig.WorkerId,
-                    ["GrpcMaxMessageLength"] = "1024"
+                    ["GrpcMaxMessageLength"] = (1024 * 10).ToString()
                 });
             })
             .ConfigureServices((host, services) =>

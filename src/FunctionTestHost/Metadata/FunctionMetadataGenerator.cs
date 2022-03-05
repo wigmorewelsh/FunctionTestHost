@@ -21,7 +21,7 @@ internal class FunctionMetadataGenerator
     {
         _extensions = new Dictionary<string, string>();
     }
-     
+
     public IDictionary<string, string> Extensions
     {
         get { return _extensions; }
@@ -44,7 +44,7 @@ internal class FunctionMetadataGenerator
 
                 assemblies.Add(assembly);
                 functions.AddRange(GenerateFunctionMetadata(assembly));
-                    
+
                 ScanAssembly(assembly);
             }
         }
@@ -53,9 +53,9 @@ internal class FunctionMetadataGenerator
 
         return functions;
     }
-     
-        
-        
+
+
+
     public IEnumerable<SdkFunctionMetadata> GenerateFunctionMetadata(Assembly module)
     {
         var functions = new List<SdkFunctionMetadata>();
@@ -127,7 +127,7 @@ internal class FunctionMetadataGenerator
 
                 string actualMethodName = method.Name;
                 string declaringTypeName = declaringType.FullName;
-                string assemblyName = declaringType.Module.Assembly.FullName;
+                string assemblyName = declaringType.Module.Assembly.GetName().Name;
 
                 function = CreateSdkFunctionMetadata(functionName, actualMethodName, declaringTypeName, assemblyName);
 
@@ -194,8 +194,8 @@ internal class FunctionMetadataGenerator
 
                 bool hasOutputModel = TryAddOutputBindingsFromProperties(bindingMetadata, returnType);
 
-                // Special handling for HTTP results using POCOs/Types other 
-                // than HttpResponseData. We should improve this to expand this 
+                // Special handling for HTTP results using POCOs/Types other
+                // than HttpResponseData. We should improve this to expand this
                 // support to other triggers without special handling
                 if (!hasOutputModel && bindingMetadata.Any(d => IsHttpTrigger(d)))
                 {
@@ -379,12 +379,12 @@ internal class FunctionMetadataGenerator
         // the presence of "IsBatched." This is a property that is from the
         // attributes that implement the ISupportCardinality interface.
         //
-        // Note that we are directly looking for "IsBatched" today while we 
+        // Note that we are directly looking for "IsBatched" today while we
         // are not actually instantiating the Attribute type and instead relying
         // on type inspection via Mono.Cecil.
         // TODO: Do not hard-code "IsBatched" as the property to set cardinality.
         // We should rely on the interface
-        // 
+        //
         // Conversion rule
         //     "IsBatched": true => "Cardinality": "Many"
         //     "IsBatched": false => "Cardinality": "One"
@@ -397,7 +397,7 @@ internal class FunctionMetadataGenerator
                 bindingDict["Cardinality"] = "Many";
                 // Throw if parameter type is *definitely* not a collection type.
                 // Note that this logic doesn't dictate what we can/can't do, and
-                // we can be more restrictive in the future because today some 
+                // we can be more restrictive in the future because today some
                 // scenarios result in runtime failures.
                 if (IsIterableCollection(parameterType, out BindingInfo.Types.DataType dataType))
                 {
@@ -431,7 +431,7 @@ internal class FunctionMetadataGenerator
 
     private static bool IsIterableCollection(Type type, out BindingInfo.Types.DataType dataType)
     {
-        // Array and not byte array 
+        // Array and not byte array
         bool isArray = type.IsArray &&
                        !string.Equals(type.FullName, Constants.ByteArrayType, StringComparison.Ordinal);
         if (isArray)
@@ -516,7 +516,7 @@ internal class FunctionMetadataGenerator
 
     private static string? ResolveIEnumerableOfTType(Type type, Dictionary<string, string> foundMapping)
     {
-        // Base case: 
+        // Base case:
         // We are at IEnumerable<T> and want to return the most recent resolution of T
         // (Most recent is relative to IEnumerable<T>)
         if (string.Equals(type.FullName, Constants.IEnumerableOfT, StringComparison.Ordinal))

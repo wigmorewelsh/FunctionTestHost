@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace FunctionTestHost.Actors;
 public interface IFunctionEndpointGrain : IGrainWithStringKey
 {
     Task Add(IFunctionInstanceGrain functionInstanceGrain);
-    Task Call();
+    Task<AzureFunctionsRpcMessages.InvocationResponse> Call();
 }
 
 [Reentrant]
@@ -25,10 +26,14 @@ public class FunctionEndpointGrain : Grain, IFunctionEndpointGrain
         return Task.CompletedTask;
     }
 
-    public async Task Call()
+    public async Task<AzureFunctionsRpcMessages.InvocationResponse> Call()
     {
         await init.Task;
         if (grains.Any())
-            await grains.First().Call(this.GetPrimaryKeyString());
+            return await grains.First().Request(this.GetPrimaryKeyString());
+        else
+        {
+            throw new NotSupportedException("No functions avaliable");
+        }
     }
 }

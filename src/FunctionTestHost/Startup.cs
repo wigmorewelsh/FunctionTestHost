@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AzureFunctionsRpcMessages;
 using FunctionTestHost.Actors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,7 +10,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Orleans.CodeGeneration;
 using Orleans.Runtime;
+
+[assembly: KnownType(typeof(InvocationResponse))]
 
 namespace FunctionTestHost;
 

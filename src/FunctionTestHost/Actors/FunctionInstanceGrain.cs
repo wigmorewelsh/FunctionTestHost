@@ -24,7 +24,11 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         _context = context;
     }
 
-    public TaskCompletionSource<IServerStreamWriter<AzureFunctionsRpcMessages.StreamingMessage>> ResponseStream = new (TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource<IServerStreamWriter<AzureFunctionsRpcMessages.StreamingMessage>> ResponseStream =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public TaskCompletionSource ReadyForRequests =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public override Task OnActivateAsync()
     {
@@ -45,13 +49,28 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         var stream = await ResponseStream.Task;
         foreach (var loadRequest in messagePar.FunctionInit.FunctionLoadRequestsResults)
         {
+            // await responseStream.WriteAsync(new StreamingMessage
+            // {
+            //     FunctionLoadRequest = new FunctionLoadRequest
+            //     {
+            //         FunctionId = "Hello",
+            //         Metadata = new RpcFunctionMetadata
+            //         {
+            //             IsProxy = false,
+            //             ScriptFile = "FunctionAppOne.dll",
+            //             Name = "Hello",
+            //             EntryPoint = "FunctionAppOne.Hello.Run",
+            //         }
+            //     }
+            // });
+
             await stream.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
             {
                 RequestId = Guid.NewGuid().ToString(),
                 FunctionLoadRequest = new FunctionLoadRequest
                 {
                     FunctionId = loadRequest.FunctionId,
-                    ManagedDependencyEnabled = loadRequest.ManagedDependencyEnabled,
+                    // ManagedDependencyEnabled = loadRequest.ManagedDependencyEnabled,
                     Metadata = new RpcFunctionMetadata
                     {
                         Name = loadRequest.Metadata.Name,
@@ -67,8 +86,16 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         }
     }
 
-    public async Task Call(string functionId)
+    public async Task SetReady()
     {
+        ReadyForRequests.TrySetResult();
+    }
+
+    private TaskCompletionSource<InvocationResponse> pendingRequest = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public async Task<InvocationResponse> Request(string functionId)
+    {
+        await ReadyForRequests.Task;
         var stream = await ResponseStream.Task;
         await stream.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
         {
@@ -96,6 +123,13 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 }
             }
         });
+        return await pendingRequest.Task;
+    }
+
+    public Task Response(InvocationResponse response)
+    {
+        pendingRequest.TrySetResult(response);
+        return Task.CompletedTask;
     }
 
     public Task Notification()

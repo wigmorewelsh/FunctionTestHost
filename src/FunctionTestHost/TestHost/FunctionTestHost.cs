@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using FunctionTestHost;
 using FunctionTestHost.Actors;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Orleans;
+using Orleans.Configuration;
 using Orleans.Hosting;
 using Xunit;
 
@@ -30,6 +32,10 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
         _fakeHost = Host.CreateDefaultBuilder()
             .UseOrleans(orleans =>
             {
+                orleans.Configure<SerializationProviderOptions>(opt =>
+                {
+                    opt.SerializationProviders.Add(typeof(ProtobufNetSerializer));
+                });
                 orleans.UseLocalhostClustering();
                 orleans.ConfigureApplicationParts(parts =>
                     parts.AddApplicationPart(typeof(FunctionInstanceGrain).Assembly));
@@ -72,11 +78,19 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
 
     }
 
-    public async Task CallFunction(string functionName)
+    public async Task<string> CallFunction(string functionName)
     {
         await CreateServer();
         var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
         var funcGrain = factory.GetGrain<IFunctionEndpointGrain>(functionName);
-        await funcGrain.Call();
+        var response = await funcGrain.Call();
+        if (response.ReturnValue.Http is { } http)
+        {
+            if (http.Body.Bytes is { } bytes)
+            {
+                return Encoding.UTF8.GetString(Convert.FromBase64String(bytes.ToBase64()));
+            }
+        }
+        return response.Result.Result;
     }
 }

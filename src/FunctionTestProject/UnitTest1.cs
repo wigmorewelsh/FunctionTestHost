@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using FunctionAppOne;
+using Shouldly;
 using Xunit;
 
 namespace FunctionTestProject;
@@ -17,6 +18,7 @@ public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
     [Fact]
     public async Task Test1()
     {
-        await _testHost.CallFunction("Hello");
+        var response = await _testHost.CallFunction("Hello");
+        response.ShouldBe("Welcome to Azure Functions!");
     }
 }
