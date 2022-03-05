@@ -32,7 +32,6 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     }
 
     private FunctionState State = FunctionState.Init;
-    private ChannelWriter<AzureFunctionsRpcMessages.StreamingMessage> _grpcChannel;
 
     public Task Init()
     {
@@ -43,9 +42,10 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     public async Task InitMetadata(byte[] message)
     {
         var messagePar = StreamingMessage.Parser.ParseFrom(message);
+        var stream = await ResponseStream.Task;
         foreach (var loadRequest in messagePar.FunctionInit.FunctionLoadRequestsResults)
         {
-            await _grpcChannel.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
+            await stream.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
             {
                 RequestId = Guid.NewGuid().ToString(),
                 FunctionLoadRequest = new FunctionLoadRequest
@@ -62,10 +62,12 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                     }
                 }
             });
+            var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
+            await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
         }
     }
 
-    public async Task Call()
+    public async Task Call(string functionId)
     {
         var stream = await ResponseStream.Task;
         await stream.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
@@ -73,7 +75,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             RequestId = Guid.NewGuid().ToString(),
             InvocationRequest = new InvocationRequest()
             {
-                FunctionId = "Hello",
+                FunctionId = functionId,
                 InvocationId = "123",
                 InputData =
                 {

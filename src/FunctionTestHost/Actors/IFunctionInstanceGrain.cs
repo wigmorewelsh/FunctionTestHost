@@ -9,5 +9,5 @@ public interface IFunctionInstanceGrain : IGrainWithStringKey, IQueueSubscriber
 {
     Task Init();
     Task InitMetadata(byte[] message);
-    Task Call();
+    Task Call(string functionId);
 }

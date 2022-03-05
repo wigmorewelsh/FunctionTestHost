@@ -76,7 +76,7 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
     {
         await CreateServer();
         var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
-        var funcGrain = factory.GetGrain<IFunctionInstanceGrain>(functionName);
+        var funcGrain = factory.GetGrain<IFunctionEndpointGrain>(functionName);
         await funcGrain.Call();
     }
 }

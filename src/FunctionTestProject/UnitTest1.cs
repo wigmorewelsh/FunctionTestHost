@@ -17,6 +17,6 @@ public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
     [Fact]
     public async Task Test1()
     {
-        await _testHost.CallFunction("123");
+        await _testHost.CallFunction("Hello");
     }
 }

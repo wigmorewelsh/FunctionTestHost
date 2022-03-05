@@ -48,8 +48,3 @@ public class LocalGrainActivator : DefaultGrainActivator, ILocalGrainCatalog
         return grainContext;
     }
 }
-
-public interface ILocalGrainCatalog
-{
-    FunctionGrainContext GetGrain(IGrainIdentity getGrainIdentity);
-}
