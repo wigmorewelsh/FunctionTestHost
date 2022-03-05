@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 using FunctionTestHost;
@@ -83,6 +84,23 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
         await CreateServer();
         var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
         var funcGrain = factory.GetGrain<IFunctionEndpointGrain>(functionName);
+        var response = await funcGrain.Call();
+        if (response.ReturnValue.Http is { } http)
+        {
+            if (http.Body.Bytes is { } bytes)
+            {
+                return Encoding.UTF8.GetString(Convert.FromBase64String(bytes.ToBase64()));
+            }
+        }
+        return response.Result.Result;
+    }
+
+    public async Task<string> CallFunction(string functionName, JsonContent body)
+    {
+        await CreateServer();
+        var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
+        var funcGrain = factory.GetGrain<IFunctionEndpointGrain>(functionName);
+        
         var response = await funcGrain.Call();
         if (response.ReturnValue.Http is { } http)
         {

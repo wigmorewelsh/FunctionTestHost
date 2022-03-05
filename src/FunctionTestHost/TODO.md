@@ -3,7 +3,7 @@ TODO
 
 5. Clone port randomizer from orleans
 6. Send http message body to function
-7. Return http resposne back to caller
+7. Support different argument names
 
 Test Server
 -----------
@@ -19,3 +19,4 @@ Done:
 3. Setup stream from grain to grpc
 4. Call function stream to start function from grain
 5. Add function grain to registory
+7. Return http resposne back to caller

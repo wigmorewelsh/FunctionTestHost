@@ -11,7 +11,7 @@ namespace FunctionTestHost.Actors;
 public interface IFunctionInstanceGrain : IGrainWithStringKey, IQueueSubscriber
 {
     Task Init();
-    Task InitMetadata(byte[] message);
+    Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message);
     Task<AzureFunctionsRpcMessages.InvocationResponse> Request(string functionId);
     // Full name needed for code gen
     Task Response(AzureFunctionsRpcMessages.InvocationResponse response);

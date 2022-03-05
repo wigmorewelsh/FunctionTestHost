@@ -43,27 +43,11 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         return Task.CompletedTask;
     }
 
-    public async Task InitMetadata(byte[] message)
+    public async Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message)
     {
-        var messagePar = StreamingMessage.Parser.ParseFrom(message);
         var stream = await ResponseStream.Task;
-        foreach (var loadRequest in messagePar.FunctionInit.FunctionLoadRequestsResults)
+        foreach (var loadRequest in message.FunctionInit.FunctionLoadRequestsResults)
         {
-            // await responseStream.WriteAsync(new StreamingMessage
-            // {
-            //     FunctionLoadRequest = new FunctionLoadRequest
-            //     {
-            //         FunctionId = "Hello",
-            //         Metadata = new RpcFunctionMetadata
-            //         {
-            //             IsProxy = false,
-            //             ScriptFile = "FunctionAppOne.dll",
-            //             Name = "Hello",
-            //             EntryPoint = "FunctionAppOne.Hello.Run",
-            //         }
-            //     }
-            // });
-
             await stream.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
             {
                 RequestId = Guid.NewGuid().ToString(),
