@@ -1,11 +1,14 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureFunctionsRpcMessages;
 using FunctionMetadataEndpoint;
 using Grpc.Core;
 using Microsoft.Azure.Functions.Worker.Sdk;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using FunctionRpc = FunctionMetadataEndpoint.FunctionRpc;
+using StreamingMessage = FunctionMetadataEndpoint.StreamingMessage;
 
 namespace FunctionTestHost.MetadataClient;
 
@@ -48,7 +51,7 @@ public class MetadataClientRpc<TStartup> : IHostedService
             // {
             //     bindingInfos[binding["Name"] as string] = new BindingInfo
             //     {
-            //         
+            //
             //     };
             // }
             functionLoadRequests.Add(new FunctionLoadRequest

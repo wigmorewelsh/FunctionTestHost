@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -30,9 +32,20 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     public TaskCompletionSource ReadyForRequests =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    private CancellationTokenSource _shutdown = new ();
+
     public override Task OnActivateAsync()
     {
         return Task.CompletedTask;
+    }
+
+    public override Task OnDeactivateAsync()
+    {
+        ResponseStream.TrySetCanceled();
+        ReadyForRequests.TrySetCanceled();
+        pendingRequest.TrySetCanceled();
+        _shutdown.Cancel();
+        return base.OnDeactivateAsync();
     }
 
     private FunctionState State = FunctionState.Init;
@@ -43,27 +56,18 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         return Task.CompletedTask;
     }
 
+    private List<AzureFunctionsRpcMessages.FunctionLoadRequest> _bindings = new();
+
     public async Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message)
     {
         var stream = await ResponseStream.Task;
         foreach (var loadRequest in message.FunctionInit.FunctionLoadRequestsResults)
         {
+            _bindings.Add(loadRequest);
             await stream.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
             {
                 RequestId = Guid.NewGuid().ToString(),
-                FunctionLoadRequest = new FunctionLoadRequest
-                {
-                    FunctionId = loadRequest.FunctionId,
-                    // ManagedDependencyEnabled = loadRequest.ManagedDependencyEnabled,
-                    Metadata = new RpcFunctionMetadata
-                    {
-                        Name = loadRequest.Metadata.Name,
-                        Directory = loadRequest.Metadata.Directory,
-                        EntryPoint = loadRequest.Metadata.EntryPoint,
-                        IsProxy = loadRequest.Metadata.IsProxy,
-                        ScriptFile = loadRequest.Metadata.ScriptFile
-                    }
-                }
+                FunctionLoadRequest = loadRequest
             });
             var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
             await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
@@ -81,7 +85,12 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     {
         await ReadyForRequests.Task;
         var stream = await ResponseStream.Task;
-        await stream.WriteAsync(new AzureFunctionsRpcMessages.StreamingMessage
+
+        var rpcTraceContext = new RpcTraceContext
+        {
+            TraceParent = "123"
+        };
+        var streamingMessage = new AzureFunctionsRpcMessages.StreamingMessage
         {
             RequestId = Guid.NewGuid().ToString(),
             InvocationRequest = new InvocationRequest()
@@ -97,16 +106,15 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                         {
                             Http = new RpcHttp
                             {
+
                             }
                         }
                     }
                 },
-                TraceContext = new RpcTraceContext
-                {
-                    TraceParent = "123"
-                }
+                TraceContext = rpcTraceContext
             }
-        });
+        };
+        await stream.WriteAsync(streamingMessage);
         return await pendingRequest.Task;
     }
 

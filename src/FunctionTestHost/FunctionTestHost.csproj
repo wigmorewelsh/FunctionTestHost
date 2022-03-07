@@ -8,7 +8,7 @@
 
     <ItemGroup>
         <Protobuf Include="protos-az/**/*.proto" GrpcServices="Server" ProtoRoot="protos-az/src/proto" />
-        <Protobuf Include="protos/MetadataEndpoint.proto" GrpcServices="Server;Client" ProtoPath="protos-az/src/proto" />
+        <Protobuf Include="protos/MetadataEndpoint.proto" GrpcServices="Server;Client" ProtoPath="protos-az/src/proto" AdditionalImportDirs="protos-az/src/proto"  />
     </ItemGroup>
 
     <ItemGroup>

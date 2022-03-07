@@ -7,12 +7,6 @@ using Orleans.Concurrency;
 
 namespace FunctionTestHost.Actors;
 
-public interface IFunctionEndpointGrain : IGrainWithStringKey
-{
-    Task Add(IFunctionInstanceGrain functionInstanceGrain);
-    Task<AzureFunctionsRpcMessages.InvocationResponse> Call();
-}
-
 [Reentrant]
 public class FunctionEndpointGrain : Grain, IFunctionEndpointGrain
 {
