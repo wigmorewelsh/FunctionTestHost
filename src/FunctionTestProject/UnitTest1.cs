@@ -23,6 +23,14 @@ public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
         response.ShouldBe("Welcome to Azure Functions!");
     }
 
+
+    [Fact]
+    public async Task Test2()
+    {
+        var response = await _testHost.CallFunction("HelloTwo");
+        response.ShouldBe("Welcome to Azure Functions!");
+    }
+
     [Fact(Skip = "next")]
     public async Task Test1WithBody()
     {

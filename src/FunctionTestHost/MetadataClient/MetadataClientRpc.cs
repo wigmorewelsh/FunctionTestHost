@@ -46,7 +46,6 @@ public class MetadataClientRpc<TStartup> : IHostedService
         foreach (var sdkFunctionMetadata in metadata)
         {
             var bindingInfos = new Dictionary<string, BindingInfo>();
-            // TODO: Implement binding metadata
             foreach (IDictionary<string, object> binding in sdkFunctionMetadata.Bindings)
             {
                 bindingInfos[binding["Name"] as string] = new BindingInfo

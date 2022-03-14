@@ -57,6 +57,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     }
 
     private List<AzureFunctionsRpcMessages.FunctionLoadRequest> _bindings = new();
+    private Dictionary<string, string> _httpBindings = new ();
 
     public async Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message)
     {
@@ -69,9 +70,30 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 RequestId = Guid.NewGuid().ToString(),
                 FunctionLoadRequest = loadRequest
             });
-            var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
-            await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
+            if (TryGetHttpBinding(loadRequest, out var paramName, out var httpBinding))
+            {
+                var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
+                await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
+                _httpBindings[loadRequest.FunctionId] = paramName;
+            }
         }
+    }
+
+    private bool TryGetHttpBinding(FunctionLoadRequest loadRequest, out string bindingName, out BindingInfo bindingInfo)
+    {
+        foreach (var (key, value) in loadRequest.Metadata.Bindings)
+        {
+            if (value.Type == "HttpTrigger")
+            {
+                bindingName = key;
+                bindingInfo = value;
+                return true;
+            }
+        }
+
+        bindingName = null;
+        bindingInfo = null;
+        return false;
     }
 
     public async Task SetReady()
@@ -80,6 +102,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     }
 
     private TaskCompletionSource<InvocationResponse> pendingRequest = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
 
     public async Task<InvocationResponse> Request(string functionId)
     {
@@ -101,7 +124,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 {
                     new ParameterBinding
                     {
-                        Name = "req",
+                        Name = _httpBindings[functionId],
                         Data = new TypedData
                         {
                             Http = new RpcHttp
