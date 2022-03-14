@@ -47,13 +47,15 @@ public class MetadataClientRpc<TStartup> : IHostedService
         {
             var bindingInfos = new Dictionary<string, BindingInfo>();
             // TODO: Implement binding metadata
-            // foreach (var binding in sdkFunctionMetadata.Bindings)
-            // {
-            //     bindingInfos[binding["Name"] as string] = new BindingInfo
-            //     {
-            //
-            //     };
-            // }
+            foreach (IDictionary<string, object> binding in sdkFunctionMetadata.Bindings)
+            {
+                bindingInfos[binding["Name"] as string] = new BindingInfo
+                {
+                    Direction = Direction(binding),
+                    Type = binding["Type"] as string,
+                    DataType = DataType(binding)
+                };
+            }
             functionLoadRequests.Add(new FunctionLoadRequest
             {
                 FunctionId = sdkFunctionMetadata.Name,
@@ -78,6 +80,37 @@ public class MetadataClientRpc<TStartup> : IHostedService
                 FunctionLoadRequestsResults = { functionLoadRequests }
             }
         });
+    }
+
+    private static BindingInfo.Types.Direction Direction(IDictionary<string, object> binding)
+    {
+        if (binding.TryGetValue("Direction", out var direction))
+        {
+            return direction switch
+            {
+                "In" => BindingInfo.Types.Direction.In,
+                "Out" => BindingInfo.Types.Direction.Out,
+                "Inout" => BindingInfo.Types.Direction.Inout
+            };
+        }
+
+        return BindingInfo.Types.Direction.In;
+    }
+
+    private static BindingInfo.Types.DataType DataType(IDictionary<string, object> binding)
+    {
+        if (binding.TryGetValue("DataType", out var dataType))
+        {
+            return dataType switch
+            {
+                "String" => BindingInfo.Types.DataType.String,
+                "Stream" => BindingInfo.Types.DataType.Stream,
+                "Binary" => BindingInfo.Types.DataType.Binary,
+                _ => BindingInfo.Types.DataType.Undefined
+            };
+        }
+
+        return BindingInfo.Types.DataType.Undefined;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
