@@ -21,6 +21,8 @@ jobs:
         dotnet-version: 6.0.x
     - name: GitTools Setup
       uses: gittools/actions/gitversion/setup@v0.9.7
+      with:
+        versionSpec: '5.x'
     - name: GitTools Run
       uses: gittools/actions/gitversion/execute@v0.9.7
     - name: Restore dependencies
