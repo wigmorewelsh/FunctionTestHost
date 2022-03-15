@@ -38,10 +38,8 @@ jobs:
         run: dotnet nuget add source --name github "https://nuget.pkg.github.com/OWNER/index.json"
       - name: Publish github
         run: dotnet nuget push "**/*.nupkg" --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}
-      - name: Setup auth nuget
-        run: dotnet nuget add source --name nuget "https://api.nuget.org/v3/index.json"
       - name: Publish Nuget
-        run: dotnet nuget push "**/*.nupkg" --source "nuget" --api-key ${{ secrets.NUGETORG }}
+        run: dotnet nuget push "**/*.nupkg" --source "nuget.org" --api-key ${{ secrets.NUGETORG }}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
