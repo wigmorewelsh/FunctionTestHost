@@ -1,9 +1,11 @@
 TODO
 ----
-
-5. Clone port randomizer from orleans
-6. Send http message body to function
-7. Support different argument names
+1. Populate parameter bindings from metadata
+2. Clone port randomizer from orleans
+3. Send http message body to function
+4. Support different argument names
+5. Enable nuget package checking
+6. Setup versioning
 
 Test Server
 -----------
