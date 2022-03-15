@@ -3,7 +3,7 @@ using System.IO;
 using Google.Protobuf;
 using Orleans.Serialization;
 
-namespace FunctionTestProject;
+namespace FunctionTestHost.TestHost;
 
 public class ProtobufNetSerializer : IExternalSerializer
 {

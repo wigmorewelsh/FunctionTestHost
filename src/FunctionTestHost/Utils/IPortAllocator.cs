@@ -1,6 +1,6 @@
 using System;
 
-namespace Orleans.TestingHost;
+namespace FunctionTestHost.Utils;
 
 public interface ITestClusterPortAllocator : IDisposable
 {

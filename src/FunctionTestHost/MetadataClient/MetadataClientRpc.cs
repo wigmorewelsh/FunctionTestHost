@@ -3,8 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using FunctionMetadataEndpoint;
+using FunctionTestHost.Metadata;
 using Grpc.Core;
-using Microsoft.Azure.Functions.Worker.Sdk;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using FunctionRpc = FunctionMetadataEndpoint.FunctionRpc;
@@ -98,6 +98,7 @@ public class MetadataClientRpc<TStartup> : IHostedService
 
     private static BindingInfo.Types.DataType DataType(IDictionary<string, object> binding)
     {
+        // if the cardinality is many should this return stream?
         if (binding.TryGetValue("DataType", out var dataType))
         {
             return dataType switch

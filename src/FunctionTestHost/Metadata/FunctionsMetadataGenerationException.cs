@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Microsoft.Azure.Functions.Worker.Sdk;
+namespace FunctionTestHost.Metadata;
 
 [Serializable]
 internal class FunctionsMetadataGenerationException: Exception

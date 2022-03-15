@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using FunctionTestHost.Actors;
+using FunctionTestHost.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;

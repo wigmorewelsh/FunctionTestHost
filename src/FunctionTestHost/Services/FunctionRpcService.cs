@@ -7,7 +7,7 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Orleans;
 
-namespace FunctionTestHost;
+namespace FunctionTestHost.Services;
 
 public class FunctionRpcService : FunctionRpc.FunctionRpcBase
 {
@@ -33,9 +33,11 @@ public class FunctionRpcService : FunctionRpc.FunctionRpcBase
 
         var response = await WaitTillInit(requestStream, context.CancellationToken);
 
+        // localGrain.SetRequestStream(responseStream); ??
         await functionGrain.SetReady();
 
         await StartReading(requestStream, functionGrain, context.CancellationToken);
+        // await localGrain.DeactivationTask(context.CancellationToken); ??
     }
 
     private async Task StartReading(IAsyncStreamReader<StreamingMessage> requestStream,

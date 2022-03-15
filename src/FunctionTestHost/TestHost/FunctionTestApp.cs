@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using FunctionMetadataEndpoint;
 using FunctionTestHost.MetadataClient;
-using FunctionTestProject.Utils;
+using FunctionTestHost.Utils;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-namespace FunctionTestProject;
+namespace FunctionTestHost.TestHost;
 
 public class FunctionTestApp<TStartup> : IAsyncDisposable
 {

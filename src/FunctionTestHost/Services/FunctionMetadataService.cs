@@ -1,11 +1,10 @@
 using System.Threading.Tasks;
 using FunctionMetadataEndpoint;
 using FunctionTestHost.Actors;
-using Google.Protobuf;
 using Grpc.Core;
 using Orleans;
 
-namespace FunctionTestHost;
+namespace FunctionTestHost.Services;
 
 public class FunctionMetadataService : FunctionRpc.FunctionRpcBase
 {

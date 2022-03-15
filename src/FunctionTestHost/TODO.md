@@ -1,11 +1,11 @@
 TODO
 ----
 2. Clone port randomizer from orleans
-3. Send http message body to function
-4. Enable nuget package checking
-5. Really basic support for calling service bus in bindings
-7. Handle error from function invoke
-
+3. Enable nuget package checking
+4. Really basic support for calling service bus in bindings
+5. Handle error from function invoke
+6. Concurrent tests to check consistancy 
+7. Sort out release notes
 
 Test Server
 -----------
@@ -26,3 +26,4 @@ Done:
 1. Populate parameter bindings from metadata
 4. Support different argument names
 6. Allow tests to override parts of the function app config
+3. Send http message body to function

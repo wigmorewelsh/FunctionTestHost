@@ -5,9 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Microsoft.VisualBasic;
 
-namespace Microsoft.Azure.Functions.Worker.Sdk;
+namespace FunctionTestHost.Metadata;
 
 public static class CustomAttributeExtensions
 {

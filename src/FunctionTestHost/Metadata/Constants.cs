@@ -1,4 +1,4 @@
-namespace Microsoft.Azure.Functions.Worker.Sdk;
+namespace FunctionTestHost.Metadata;
 
 internal static class Constants
 {

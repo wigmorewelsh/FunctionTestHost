@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace FunctionTestProject.Utils;
+namespace FunctionTestHost.Utils;
 
 internal class HostFactoryResolver
 {

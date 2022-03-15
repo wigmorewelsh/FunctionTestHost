@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 
-namespace Microsoft.Azure.Functions.Worker.Sdk;
+namespace FunctionTestHost.Metadata;
 
 internal class SdkFunctionMetadata
 {

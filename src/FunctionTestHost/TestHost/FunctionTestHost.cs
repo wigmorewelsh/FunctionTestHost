@@ -3,8 +3,8 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
-using FunctionTestHost;
 using FunctionTestHost.Actors;
+using FunctionTestHost.Utils;
 using Google.Protobuf;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -15,7 +15,7 @@ using Orleans.Configuration;
 using Orleans.Hosting;
 using Xunit;
 
-namespace FunctionTestProject;
+namespace FunctionTestHost.TestHost;
 
 public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
 {

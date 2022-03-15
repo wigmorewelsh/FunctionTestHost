@@ -2,6 +2,7 @@ using System;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FunctionAppOne;
+using FunctionTestHost.TestHost;
 using Shouldly;
 using Xunit;
 
@@ -23,7 +24,6 @@ public class HttpFunctionTests : IClassFixture<FunctionTestHost<Program>>
         response.ShouldBe("Welcome to Azure Functions!");
     }
 
-
     [Fact]
     public async Task CallSimpleFunction2()
     {
@@ -37,7 +37,6 @@ public class HttpFunctionTests : IClassFixture<FunctionTestHost<Program>>
         var response = await _testHost.CallFunction("HelloTask");
         response.ShouldBe("Welcome to Azure Functions!");
     }
-
 
     [Fact]
     public async Task CallFunctionWithJsonCOntent()

@@ -1,4 +1,4 @@
-namespace FunctionTestProject;
+namespace FunctionTestHost.TestHost;
 
 public class WorkerConfig
 {

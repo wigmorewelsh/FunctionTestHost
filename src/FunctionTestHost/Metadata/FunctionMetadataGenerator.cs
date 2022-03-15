@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Dynamic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using AzureFunctionsRpcMessages;
 
-namespace Microsoft.Azure.Functions.Worker.Sdk;
+namespace FunctionTestHost.Metadata;
 
 internal class FunctionMetadataGenerator
 {
