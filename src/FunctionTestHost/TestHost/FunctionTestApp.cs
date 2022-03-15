@@ -14,13 +14,14 @@ namespace FunctionTestProject;
 
 public class FunctionTestApp<TStartup> : IAsyncDisposable
 {
+    private readonly FunctionTestHost<TStartup> _functionTestHost;
     private AsyncLock _lock = new();
     private volatile bool _isInit = false;
     private IHost _functionHost;
 
-    public FunctionTestApp()
+    public FunctionTestApp(FunctionTestHost<TStartup> functionTestHost)
     {
-
+        _functionTestHost = functionTestHost;
     }
 
     public async Task Start()
@@ -30,7 +31,7 @@ public class FunctionTestApp<TStartup> : IAsyncDisposable
         if(_isInit) return;
 
         var builder = HostFactoryResolver.ResolveHostBuilderFactory<IHostBuilder>(typeof(TStartup).Assembly);
-        _functionHost = builder(Array.Empty<string>())
+        var configureServices = builder(Array.Empty<string>())
             .ConfigureAppConfiguration(config =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string>
@@ -52,7 +53,9 @@ public class FunctionTestApp<TStartup> : IAsyncDisposable
                     return new FunctionRpc.FunctionRpcClient(channel);
                 });
                 services.AddHostedService<MetadataClientRpc<TStartup>>();
-            })
+            });
+        this._functionTestHost.ConfigureFunction(configureServices);
+        _functionHost = configureServices
             .Build();
 
         _functionHost.Start();

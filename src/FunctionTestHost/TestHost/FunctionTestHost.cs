@@ -50,7 +50,7 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
 
         _fakeHost.Start();
 
-        _functionHost = new FunctionTestApp<TStartup>();
+        _functionHost = new FunctionTestApp<TStartup>(this);
         await _functionHost.Start();
 
 
@@ -100,7 +100,7 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
         await CreateServer();
         var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
         var funcGrain = factory.GetGrain<IFunctionEndpointGrain>(functionName);
-        
+
         var response = await funcGrain.Call();
         if (response.ReturnValue.Http is { } http)
         {
@@ -110,5 +110,9 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
             }
         }
         return response.Result.Result;
+    }
+
+    public virtual void ConfigureFunction(IHostBuilder host)
+    {
     }
 }
