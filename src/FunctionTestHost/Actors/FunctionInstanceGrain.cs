@@ -70,6 +70,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 RequestId = Guid.NewGuid().ToString(),
                 FunctionLoadRequest = loadRequest
             });
+            // TODO: extract this into external class and config
             if (TryGetHttpBinding(loadRequest, out var paramName, out var httpBinding))
             {
                 var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
