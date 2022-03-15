@@ -44,6 +44,6 @@ public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
     {
         var body = JsonContent.Create("foo");
         var response = await _testHost.CallFunction("Hello", body);
-        response.ShouldBe("Welcome to Azure Functions!");
+        response.ShouldBe("Welcome to Azure Functions!\"foo\"");
     }
 }

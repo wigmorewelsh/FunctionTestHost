@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using FunctionTestHost;
 using FunctionTestHost.Actors;
+using Google.Protobuf;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -105,7 +106,7 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
         var httpBody = new RpcHttp();
         httpBody.Body = new TypedData
         {
-            Json = await body.ReadAsStringAsync()
+            Bytes = ByteString.FromStream(await body.ReadAsStreamAsync())
         };
         var response = await funcGrain.Call(httpBody);
         if (response.ReturnValue.Http is { } http)
