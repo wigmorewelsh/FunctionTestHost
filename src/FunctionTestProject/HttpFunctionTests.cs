@@ -7,17 +7,17 @@ using Xunit;
 
 namespace FunctionTestProject;
 
-public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
+public class HttpFunctionTests : IClassFixture<FunctionTestHost<Program>>
 {
     private readonly FunctionTestHost<Program> _testHost;
 
-    public UnitTest1(FunctionTestHost<Program> testHost)
+    public HttpFunctionTests(FunctionTestHost<Program> testHost)
     {
         _testHost = testHost;
     }
 
     [Fact]
-    public async Task Test1()
+    public async Task CallSimpleFunction()
     {
         var response = await _testHost.CallFunction("Hello");
         response.ShouldBe("Welcome to Azure Functions!");
@@ -25,14 +25,14 @@ public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
 
 
     [Fact]
-    public async Task Test2()
+    public async Task CallSimpleFunction2()
     {
         var response = await _testHost.CallFunction("HelloTwo");
         response.ShouldBe("Welcome to Azure Functions!");
     }
 
     [Fact]
-    public async Task TestTask()
+    public async Task CallTaskBasedFunction()
     {
         var response = await _testHost.CallFunction("HelloTask");
         response.ShouldBe("Welcome to Azure Functions!");
@@ -40,7 +40,7 @@ public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
 
 
     [Fact]
-    public async Task Test1WithBody()
+    public async Task CallFunctionWithJsonCOntent()
     {
         var body = JsonContent.Create("foo");
         var response = await _testHost.CallFunction("Hello", body);
