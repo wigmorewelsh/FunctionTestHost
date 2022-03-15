@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,22 @@ public class Hello
 
     [Function("HelloTwo")]
     public HttpResponseData RunTwo(
+        [HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData request,
+        FunctionContext executionContext)
+    {
+        var logger = executionContext.GetLogger("Hello");
+        logger.LogInformation("C# HTTP trigger function processed a request.");
+
+        var response = request.CreateResponse(HttpStatusCode.OK);
+        response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+
+        response.WriteString("Welcome to Azure Functions!");
+
+        return response;
+    }
+
+    [Function("HelloTask")]
+    public async Task<HttpResponseData> HelloTask(
         [HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData request,
         FunctionContext executionContext)
     {

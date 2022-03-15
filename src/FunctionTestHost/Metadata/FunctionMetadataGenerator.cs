@@ -39,6 +39,9 @@ internal class FunctionMetadataGenerator
 
             foreach (var path in assemblyPath.GetReferencedAssemblies())
             {
+                if(path.Name.StartsWith("System")) continue;
+                if(path.Name.StartsWith("Microsoft")) continue;
+                
                 var assembly = Assembly.Load(path);
                 if (assemblies.Contains(assembly)) continue;
 
@@ -316,7 +319,7 @@ internal class FunctionMetadataGenerator
         }
 
         if (typeReference.IsGenericType
-            && string.Equals(typeReference.GetElementType().FullName, Constants.TaskGenericType,
+            && string.Equals(typeReference.GetGenericTypeDefinition().FullName, Constants.TaskGenericType,
                 StringComparison.Ordinal))
         {
             // T from Task<T>
