@@ -146,42 +146,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
     public async Task<InvocationResponse> Request(string functionId)
     {
-        await ReadyForRequests.Task;
-        var stream = await ResponseStream.Task;
-
-        var task = new TaskCompletionSource<InvocationResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var taskId = Guid.NewGuid();
-        pendingRequests[taskId] = task;
-        var rpcTraceContext = new RpcTraceContext
-        {
-            TraceParent = "123"
-        };
-        var streamingMessage = new AzureFunctionsRpcMessages.StreamingMessage
-        {
-            RequestId = Guid.NewGuid().ToString(),
-            InvocationRequest = new InvocationRequest()
-            {
-                FunctionId = functionId,
-                InvocationId = taskId.ToString(),
-                InputData =
-                {
-                    new ParameterBinding
-                    {
-                        Name = _httpBindings[functionId],
-                        Data = new TypedData
-                        {
-                            Http = new RpcHttp
-                            {
-
-                            }
-                        }
-                    }
-                },
-                TraceContext = rpcTraceContext
-            }
-        };
-        await stream.WriteAsync(streamingMessage);
-        return await task.Task;
+        return await this.RequestHttpRequest(functionId, new RpcHttp());
     }
 
     public Task Response(InvocationResponse response)
