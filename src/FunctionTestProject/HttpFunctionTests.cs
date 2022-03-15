@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http.Json;
+using System.Text;
 using System.Threading.Tasks;
 using FunctionAppOne;
 using FunctionTestHost.TestHost;
@@ -39,10 +40,17 @@ public class HttpFunctionTests : IClassFixture<FunctionTestHost<Program>>
     }
 
     [Fact]
-    public async Task CallFunctionWithJsonCOntent()
+    public async Task CallFunctionWithJsonContent()
     {
         var body = JsonContent.Create("foo");
         var response = await _testHost.CallFunction("Hello", body);
         response.ShouldBe("Welcome to Azure Functions!\"foo\"");
+    }
+
+    [Fact]
+    public async Task CallFunctionWithBytes()
+    {
+        var response = await _testHost.CallFunction("Hello", Encoding.UTF8.GetBytes("bar"));
+        response.ShouldBe("Welcome to Azure Functions!bar");
     }
 }

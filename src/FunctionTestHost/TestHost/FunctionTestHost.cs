@@ -122,4 +122,26 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
     public virtual void ConfigureFunction(IHostBuilder host)
     {
     }
+
+    public async Task<string> CallFunction(string functionName, byte[] getBytes)
+    {
+        await CreateServer();
+        var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
+        var funcGrain = factory.GetGrain<IFunctionEndpointGrain>(functionName);
+
+        var httpBody = new RpcHttp();
+        httpBody.Body = new TypedData
+        {
+            Bytes = ByteString.CopyFrom(getBytes)
+        };
+        var response = await funcGrain.Call(httpBody);
+        if (response.ReturnValue.Http is { } http)
+        {
+            if (http.Body.Bytes is { } bytes)
+            {
+                return Encoding.UTF8.GetString(Convert.FromBase64String(bytes.ToBase64()));
+            }
+        }
+        return response.Result.Result;
+    }
 }
