@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AzureFunctionsRpcMessages;
 using FunctionMetadataEndpoint;
 using FunctionTestHost.ServiceBusEmulator;
 using Google.Protobuf;
@@ -16,6 +17,7 @@ public interface IFunctionInstanceGrain : IGrainWithStringKey, IQueueSubscriber
     // Full name needed for code gen
     Task Response(AzureFunctionsRpcMessages.InvocationResponse response);
     Task SetReady();
+    Task<AzureFunctionsRpcMessages.InvocationResponse> RequestHttpRequest(string functionId, AzureFunctionsRpcMessages.RpcHttp body);
 }
 
 [Serializable]

@@ -2,6 +2,7 @@ using System;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
+using AzureFunctionsRpcMessages;
 using FunctionTestHost;
 using FunctionTestHost.Actors;
 using Microsoft.AspNetCore.Hosting;
@@ -101,7 +102,12 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
         var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
         var funcGrain = factory.GetGrain<IFunctionEndpointGrain>(functionName);
 
-        var response = await funcGrain.Call();
+        var httpBody = new RpcHttp();
+        httpBody.Body = new TypedData
+        {
+            Json = await body.ReadAsStringAsync()
+        };
+        var response = await funcGrain.Call(httpBody);
         if (response.ReturnValue.Http is { } http)
         {
             if (http.Body.Bytes is { } bytes)

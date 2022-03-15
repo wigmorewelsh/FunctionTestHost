@@ -39,7 +39,7 @@ public class UnitTest1 : IClassFixture<FunctionTestHost<Program>>
     }
 
 
-    [Fact(Skip = "next")]
+    [Fact]
     public async Task Test1WithBody()
     {
         var body = JsonContent.Create("foo");

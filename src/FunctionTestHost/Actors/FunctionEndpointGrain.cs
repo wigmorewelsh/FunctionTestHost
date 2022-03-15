@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AzureFunctionsRpcMessages;
 using Orleans;
 using Orleans.Concurrency;
 
@@ -25,6 +26,17 @@ public class FunctionEndpointGrain : Grain, IFunctionEndpointGrain
         await init.Task;
         if (grains.Any())
             return await grains.First().Request(this.GetPrimaryKeyString());
+        else
+        {
+            throw new NotSupportedException("No functions avaliable");
+        }
+    }
+
+    public async Task<AzureFunctionsRpcMessages.InvocationResponse> Call(AzureFunctionsRpcMessages.RpcHttp body)
+    {
+        await init.Task;
+        if (grains.Any())
+            return await grains.First().RequestHttpRequest(this.GetPrimaryKeyString(), body);
         else
         {
             throw new NotSupportedException("No functions avaliable");
