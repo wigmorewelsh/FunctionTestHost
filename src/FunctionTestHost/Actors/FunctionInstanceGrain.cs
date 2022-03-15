@@ -43,7 +43,10 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     {
         ResponseStream.TrySetCanceled();
         ReadyForRequests.TrySetCanceled();
-        pendingRequest.TrySetCanceled();
+        foreach (var pendingRequestsValue in pendingRequests.Values)
+        {
+            pendingRequestsValue.TrySetCanceled();
+        }
         _shutdown.Cancel();
         return base.OnDeactivateAsync();
     }
@@ -102,13 +105,16 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         ReadyForRequests.TrySetResult();
     }
 
-    private TaskCompletionSource<InvocationResponse> pendingRequest = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private Dictionary<Guid, TaskCompletionSource<InvocationResponse>> pendingRequests = new();
 
     public async Task<InvocationResponse> RequestHttpRequest(string functionId, RpcHttp body)
     {
         await ReadyForRequests.Task;
         var stream = await ResponseStream.Task;
 
+        var task = new TaskCompletionSource<InvocationResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var taskId = Guid.NewGuid();
+        pendingRequests[taskId] = task;
         var rpcTraceContext = new RpcTraceContext
         {
             TraceParent = "123"
@@ -119,7 +125,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             InvocationRequest = new InvocationRequest()
             {
                 FunctionId = functionId,
-                InvocationId = "123",
+                InvocationId = taskId.ToString(),
                 InputData =
                 {
                     new ParameterBinding
@@ -135,7 +141,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             }
         };
         await stream.WriteAsync(streamingMessage);
-        return await pendingRequest.Task;
+        return await task.Task;
     }
 
     public async Task<InvocationResponse> Request(string functionId)
@@ -143,6 +149,9 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         await ReadyForRequests.Task;
         var stream = await ResponseStream.Task;
 
+        var task = new TaskCompletionSource<InvocationResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var taskId = Guid.NewGuid();
+        pendingRequests[taskId] = task;
         var rpcTraceContext = new RpcTraceContext
         {
             TraceParent = "123"
@@ -153,7 +162,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             InvocationRequest = new InvocationRequest()
             {
                 FunctionId = functionId,
-                InvocationId = "123",
+                InvocationId = taskId.ToString(),
                 InputData =
                 {
                     new ParameterBinding
@@ -172,12 +181,19 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             }
         };
         await stream.WriteAsync(streamingMessage);
-        return await pendingRequest.Task;
+        return await task.Task;
     }
 
     public Task Response(InvocationResponse response)
     {
-        pendingRequest.TrySetResult(response);
+        if (Guid.TryParse(response.InvocationId, out var guid))
+        {
+            if (pendingRequests.TryGetValue(guid, out var taskCompletionSource))
+            {
+                taskCompletionSource.TrySetResult(response);
+                pendingRequests.Remove(guid);
+            }
+        }
         return Task.CompletedTask;
     }
 
