@@ -60,7 +60,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     }
 
     private List<AzureFunctionsRpcMessages.FunctionLoadRequest> _bindings = new();
-    private Dictionary<string, string> _httpBindings = new ();
+    private Dictionary<string, string> _bindingsParameters = new ();
 
     public async Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message)
     {
@@ -78,14 +78,15 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             {
                 var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
                 await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
-                _httpBindings[loadRequest.FunctionId] = paramName;
+                _bindingsParameters[loadRequest.FunctionId] = paramName;
             }
             if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
             {
                 //TODO: subscribe to service bus grain
                 var endpointGrain = GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
                 await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
-                _httpBindings[loadRequest.FunctionId] = paramsSbName;
+                _bindingsParameters[loadRequest.FunctionId] = paramsSbName;
+                _serviceBusBindings.Add(loadRequest.Metadata.Name);
             }
         }
     }
@@ -130,6 +131,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     }
 
     private Dictionary<Guid, TaskCompletionSource<InvocationResponse>> pendingRequests = new();
+    private HashSet<string> _serviceBusBindings = new();
 
     public async Task<InvocationResponse> RequestHttpRequest(string functionId, RpcHttp body)
     {
@@ -147,7 +149,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         {
             Http = body
         };
-        if (functionId == "SimpleServiceBusCall")
+        if (IsServiceBusCall(functionId))
         {
             typedData.Http = null;
             typedData.Bytes = body.Body.Bytes;
@@ -163,7 +165,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 {
                     new ParameterBinding
                     {
-                        Name = _httpBindings[functionId],
+                        Name = _bindingsParameters[functionId],
                         Data = typedData
                     }
                 },
@@ -172,6 +174,11 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         };
         await stream.WriteAsync(streamingMessage);
         return await task.Task;
+    }
+
+    private bool IsServiceBusCall(string functionId)
+    {
+        return _serviceBusBindings.Contains(functionId);
     }
 
     public async Task<InvocationResponse> Request(string functionId)
