@@ -38,7 +38,7 @@ public class ServiceBusTriggerAdminTests : IClassFixture<FunctionTestHostCallbac
     // string
     // byte[]
     // json
-    [Fact]
+    [Fact(Skip = "Not yet supported")]
     public async Task CallSimpleFunction_Errro()
     {
         _testHost.Thing.ClearReceivedCalls();
