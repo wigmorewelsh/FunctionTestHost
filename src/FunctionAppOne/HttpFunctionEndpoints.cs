@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FunctionAppOne;
 
-public class Hello
+public class HttpFunctionEndpoints
 {
     [Function("Hello")]
     public HttpResponseData Run(

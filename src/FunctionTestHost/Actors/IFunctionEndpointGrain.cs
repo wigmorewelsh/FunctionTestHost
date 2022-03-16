@@ -4,9 +4,7 @@ using Orleans;
 
 namespace FunctionTestHost.Actors;
 
-public interface IFunctionEndpointGrain : IGrainWithStringKey
+public interface IFunctionEndpointGrain : IPublicEndpoint, IGrainWithStringKey
 {
     Task Add(IFunctionInstanceGrain functionInstanceGrain);
-    Task<AzureFunctionsRpcMessages.InvocationResponse> Call();
-    Task<AzureFunctionsRpcMessages.InvocationResponse> Call(AzureFunctionsRpcMessages.RpcHttp body);
 }
