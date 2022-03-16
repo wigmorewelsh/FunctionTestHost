@@ -80,7 +80,31 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
                 _httpBindings[loadRequest.FunctionId] = paramName;
             }
+            if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
+            {
+                //TODO: subscribe to service bus grain
+                var endpointGrain = GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
+                await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
+                _httpBindings[loadRequest.FunctionId] = paramsSbName;
+            }
         }
+    }
+
+    private bool TryGetServiceBusBinding(FunctionLoadRequest loadRequest, out string bindingName, out BindingInfo bindingInfo)
+    {
+        foreach (var (key, value) in loadRequest.Metadata.Bindings)
+        {
+            if (value.Type == "ServiceBusTrigger")
+            {
+                bindingName = key;
+                bindingInfo = value;
+                return true;
+            }
+        }
+
+        bindingName = null;
+        bindingInfo = null;
+        return false;
     }
 
     private bool TryGetHttpBinding(FunctionLoadRequest loadRequest, out string bindingName, out BindingInfo bindingInfo)
@@ -119,6 +143,15 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         {
             TraceParent = "123"
         };
+        var typedData = new TypedData
+        {
+            Http = body
+        };
+        if (functionId == "SimpleServiceBusCall")
+        {
+            typedData.Http = null;
+            typedData.Bytes = body.Body.Bytes;
+        }
         var streamingMessage = new AzureFunctionsRpcMessages.StreamingMessage
         {
             RequestId = Guid.NewGuid().ToString(),
@@ -131,10 +164,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                     new ParameterBinding
                     {
                         Name = _httpBindings[functionId],
-                        Data = new TypedData
-                        {
-                            Http = body
-                        }
+                        Data = typedData
                     }
                 },
                 TraceContext = rpcTraceContext
