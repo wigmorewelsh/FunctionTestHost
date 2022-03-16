@@ -11,6 +11,8 @@ namespace FunctionTestHost.Utils;
 
 public class TestClusterPortAllocator : ITestClusterPortAllocator
 {
+    public static TestClusterPortAllocator Instance = new();
+
     private bool disposed;
     private readonly object lockObj = new object();
     private readonly Dictionary<int, string> allocatedPorts = new Dictionary<int, string>();

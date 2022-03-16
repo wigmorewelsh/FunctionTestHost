@@ -37,8 +37,8 @@ public class FunctionTestApp<TStartup> : IAsyncDisposable
                 config.AddInMemoryCollection(new Dictionary<string, string>
                 {
                     ["Host"] = "localhost",
-                    ["Port"] = WorkerConfig.Port.ToString(),
-                    ["WorkerId"] = WorkerConfig.WorkerId,
+                    ["Port"] = _functionTestHost.HostPorts.Item1.ToString(),
+                    ["WorkerId"] = Guid.NewGuid().ToString(),
                     ["GrpcMaxMessageLength"] = (2_147_483_647).ToString()
                 });
             })

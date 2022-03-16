@@ -19,18 +19,26 @@ namespace FunctionTestHost.TestHost;
 
 public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
 {
+    public FunctionTestHost()
+    {
+        HostPorts = TestClusterPortAllocator.Instance.AllocateConsecutivePortPairs(2);
+    }
+
     private AsyncLock _lock = new();
     private volatile bool _isInit = false;
     private volatile bool _isDisposed = false;
 
     private IHost _fakeHost;
     private FunctionTestApp<TStartup> _functionHost;
+    public (int, int) HostPorts { get; }
 
     public async Task CreateServer()
     {
         if(_isInit) return;
         using var _ = await _lock.LockAsync();
         if(_isInit) return;
+
+        var ports = TestClusterPortAllocator.Instance.AllocateConsecutivePortPairs(2);
 
         _fakeHost = Host.CreateDefaultBuilder()
             .UseOrleans(orleans =>
@@ -39,14 +47,14 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
                 {
                     opt.SerializationProviders.Add(typeof(ProtobufNetSerializer));
                 });
-                orleans.UseLocalhostClustering();
+                orleans.UseLocalhostClustering(ports.Item1, ports.Item2);
                 orleans.ConfigureApplicationParts(parts =>
                     parts.AddApplicationPart(typeof(FunctionInstanceGrain).Assembly));
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 webBuilder.ConfigureKestrel(k =>
-                    k.ListenLocalhost(WorkerConfig.Port, opt => opt.Protocols = HttpProtocols.Http2)).UseStartup<Startup>();
+                    k.ListenLocalhost(HostPorts.Item1, opt => opt.Protocols = HttpProtocols.Http2)).UseStartup<Startup>();
             })
             .Build();
 
