@@ -36,7 +36,7 @@ jobs:
         run: dotnet pack --configuration Release
       - name: Create Release
         id: create_release
-        if: env.GITHUB_REF_NAME == 'master'
+#        if: env.GITHUB_REF_NAME == 'master'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
@@ -50,12 +50,12 @@ jobs:
           draft: false
           prerelease: false
       - name: Setup auth github
-        if: env.GITHUB_REF_NAME == 'master'
+#        if: env.GITHUB_REF_NAME == 'master'
         run: dotnet nuget add source --name github "https://nuget.pkg.github.com/OWNER/index.json"
       - name: Publish github
-        if: env.GITHUB_REF_NAME == 'master'
+#        if: env.GITHUB_REF_NAME == 'master'
         run: dotnet nuget push "**/*.nupkg" --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}
       - name: Publish Nuget
-        if: env.GITHUB_REF_NAME == 'master'
+#        if: env.GITHUB_REF_NAME == 'master'
         run: dotnet nuget push "**/*.nupkg" --source "nuget.org" --api-key ${{ secrets.NUGETORG }}
 
