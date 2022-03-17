@@ -58,7 +58,7 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
             })
             .Build();
 
-        _fakeHost.Start();
+        await _fakeHost.StartAsync();
 
         _functionHost = new FunctionTestApp<TStartup>(this);
         await _functionHost.Start();
