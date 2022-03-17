@@ -58,7 +58,7 @@ public class FunctionTestApp<TStartup> : IAsyncDisposable
         _functionHost = configureServices
             .Build();
 
-        _functionHost.Start();
+        await _functionHost.StartAsync();
         _isInit = true;
     }
 
