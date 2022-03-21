@@ -59,8 +59,8 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         return Task.CompletedTask;
     }
 
-    private List<AzureFunctionsRpcMessages.FunctionLoadRequest> _bindings = new();
-    private Dictionary<string, string> _bindingsParameters = new ();
+    private readonly List<AzureFunctionsRpcMessages.FunctionLoadRequest> _bindings = new();
+    private readonly Dictionary<string, string> _bindingsParameters = new ();
 
     public async Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message)
     {
@@ -82,6 +82,10 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             }
             if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
             {
+                if (servicebusBinding.Cardinality == BindingInfo.Types.Cardinality.Many)
+                {
+                    _batchBindings.Add(loadRequest.Metadata.Name);
+                }
                 //TODO: subscribe to service bus grain
                 var endpointGrain = GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
                 await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
@@ -131,7 +135,8 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     }
 
     private Dictionary<Guid, TaskCompletionSource<InvocationResponse>> pendingRequests = new();
-    private HashSet<string> _serviceBusBindings = new();
+    private readonly HashSet<string> _serviceBusBindings = new();
+    private readonly HashSet<string> _batchBindings = new();
 
     public async Task<InvocationResponse> RequestHttpRequest(string functionId, RpcHttp body)
     {
@@ -152,7 +157,16 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         if (IsServiceBusCall(functionId))
         {
             typedData.Http = null;
-            typedData.Bytes = body.Body.Bytes;
+            if (_batchBindings.Contains(functionId))
+            {
+                var coll = new CollectionBytes();
+                coll.Bytes.Add(body.Body.Bytes);
+                typedData.CollectionBytes = coll;
+            }
+            else
+            {
+                typedData.Bytes = body.Body.Bytes;
+            }
         }
         var streamingMessage = new AzureFunctionsRpcMessages.StreamingMessage
         {

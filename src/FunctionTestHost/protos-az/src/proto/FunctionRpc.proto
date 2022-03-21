@@ -428,6 +428,12 @@ message BindingInfo {
     stream = 3;
   }
 
+  enum Cardinality {
+    unknown = 0;
+    one = 1;
+    many = 2;
+  }
+
   // Type of binding (e.g. HttpTrigger)
   string type = 2;
 
@@ -435,6 +441,8 @@ message BindingInfo {
   Direction direction = 3;
 
   DataType data_type = 4;
+
+  Cardinality cardinality = 99;
 }
 
 // Used to send logs back to the Host 

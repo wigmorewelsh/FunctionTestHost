@@ -52,7 +52,8 @@ public class MetadataClientRpc<TStartup> : IHostedService
                 {
                     Direction = Direction(binding),
                     Type = binding["Type"] as string,
-                    DataType = DataType(binding)
+                    DataType = DataType(binding),
+                    Cardinality = Cardinality(binding)
                 };
             }
             functionLoadRequests.Add(new FunctionLoadRequest
@@ -96,9 +97,23 @@ public class MetadataClientRpc<TStartup> : IHostedService
         return BindingInfo.Types.Direction.In;
     }
 
+    private static BindingInfo.Types.Cardinality Cardinality(IDictionary<string, object> binding)
+    {
+        if (binding.TryGetValue("Cardinality", out var cardinality))
+        {
+            return cardinality switch
+            {
+                "Many" => BindingInfo.Types.Cardinality.Many,
+                "One" => BindingInfo.Types.Cardinality.One,
+                _ => BindingInfo.Types.Cardinality.Unknown
+            };
+        }
+
+        return BindingInfo.Types.Cardinality.Unknown;
+    }
+
     private static BindingInfo.Types.DataType DataType(IDictionary<string, object> binding)
     {
-        // if the cardinality is many should this return stream?
         if (binding.TryGetValue("DataType", out var dataType))
         {
             return dataType switch

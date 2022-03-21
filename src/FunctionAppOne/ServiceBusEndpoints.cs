@@ -17,8 +17,19 @@ public class ServiceBusEndpoints
     }
 
     [Function("SimpleServiceBusCall")]
-    public void Run(
+    public void SimpleServiceBusCall(
         [ServiceBusTrigger("somequeue")] byte[] data,
+        FunctionContext executionContext)
+    {
+        var logger = executionContext.GetLogger("Hello");
+        logger.LogInformation("C# HTTP trigger function processed a request.");
+
+        _things.Called();
+    }
+
+    [Function("BatchServiceBusCall")]
+    public void BatchServiceBusCall(
+        [ServiceBusTrigger("somequeue", IsBatched = true)] byte[][] data,
         FunctionContext executionContext)
     {
         var logger = executionContext.GetLogger("Hello");

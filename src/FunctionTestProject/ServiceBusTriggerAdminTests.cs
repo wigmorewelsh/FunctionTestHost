@@ -55,4 +55,13 @@ public class ServiceBusTriggerAdminTests : IClassFixture<FunctionTestHostCallbac
         var response = await _testHost.CallFunction("admin/SimpleServiceBusCall", Encoding.UTF8.GetBytes("bar"));
         _testHost.Thing.Received().Called();
     }
+
+    [Fact]
+    public async Task CallBatchFunction()
+    {
+        _testHost.Thing.ClearReceivedCalls();
+
+        var response = await _testHost.CallFunction("admin/BatchServiceBusCall", Encoding.UTF8.GetBytes("bar"));
+        _testHost.Thing.Received().Called();
+    }
 }
