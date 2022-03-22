@@ -9,11 +9,11 @@ namespace FunctionAppOne;
 
 public class ServiceBusEndpoints
 {
-    private readonly IThings _things;
+    private readonly IExecutionCallback _executionCallback;
 
-    public ServiceBusEndpoints(IThings things)
+    public ServiceBusEndpoints(IExecutionCallback executionCallback)
     {
-        _things = things;
+        _executionCallback = executionCallback;
     }
 
     [Function("SimpleServiceBusCall")]
@@ -24,7 +24,7 @@ public class ServiceBusEndpoints
         var logger = executionContext.GetLogger("Hello");
         logger.LogInformation("C# HTTP trigger function processed a request.");
 
-        _things.Called();
+        _executionCallback.Called();
     }
 
     [Function("BatchServiceBusCall")]
@@ -35,7 +35,7 @@ public class ServiceBusEndpoints
         var logger = executionContext.GetLogger("Hello");
         logger.LogInformation("C# HTTP trigger function processed a request.");
 
-        _things.Called();
+        _executionCallback.Called();
     }
 
 }

@@ -1,6 +1,6 @@
 namespace FunctionAppOne;
 
-public interface IThings
+public interface IExecutionCallback
 {
     public void Called();
 }
