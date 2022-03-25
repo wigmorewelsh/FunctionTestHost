@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -66,5 +67,14 @@ public class HttpFunctionEndpoints
         response.WriteString("Welcome to Azure Functions!");
 
         return response;
+    }
+
+    [Function("ThrowTask")]
+    public async Task<HttpResponseData> ThrowTask(
+        [HttpTrigger(AuthorizationLevel.Function, "get", "post")]
+        HttpRequestData request,
+        FunctionContext executionContext)
+    {
+        throw new Exception("Error thrown");
     }
 }

@@ -91,36 +91,12 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
 
     public async Task<string> CallFunction(string functionName)
     {
-        var funcGrain = await GetEndpointGrain(functionName);
-        var response = await funcGrain.Call();
-        if (response.ReturnValue.Http is { } http)
-        {
-            if (http.Body.Bytes is { } bytes)
-            {
-                return Encoding.UTF8.GetString(Convert.FromBase64String(bytes.ToBase64()));
-            }
-        }
-        return response.Result.Result;
+        return await CallFunction(functionName, (byte[]?)null);
     }
 
     public async Task<string> CallFunction(string functionName, JsonContent body)
     {
-        var funcGrain = await GetEndpointGrain(functionName);
-
-        var httpBody = new RpcHttp();
-        httpBody.Body = new TypedData
-        {
-            Bytes = ByteString.FromStream(await body.ReadAsStreamAsync())
-        };
-        var response = await funcGrain.Call(httpBody);
-        if (response.ReturnValue.Http is { } http)
-        {
-            if (http.Body.Bytes is { } bytes)
-            {
-                return Encoding.UTF8.GetString(Convert.FromBase64String(bytes.ToBase64()));
-            }
-        }
-        return response.Result.Result;
+        return await CallFunction(functionName, await body.ReadAsByteArrayAsync()) ;
     }
 
     private async Task<IPublicEndpoint> GetEndpointGrain(string functionName)
@@ -132,6 +108,7 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
             return factory.GetGrain<IFunctionAdminEndpointGrain>(functionName);
         }
 
+
         return factory.GetGrain<IFunctionEndpointGrain>(functionName);
     }
 
@@ -139,14 +116,18 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
     {
     }
 
-    public async Task<string> CallFunction(string functionName, byte[] getBytes)
+    public async Task<string> CallFunction(string functionName, byte[]? getBytes)
     {
         var funcGrain = await GetEndpointGrain(functionName);
         var httpBody = new RpcHttp();
-        httpBody.Body = new TypedData
+        if (getBytes != null)
         {
-            Bytes = ByteString.CopyFrom(getBytes)
-        };
+            httpBody.Body = new TypedData
+            {
+                Bytes = ByteString.CopyFrom(getBytes)
+            };
+        }
+
         var response = await funcGrain.Call(httpBody);
         if (response.ReturnValue?.Http is { } http)
         {

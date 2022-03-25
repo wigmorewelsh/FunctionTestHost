@@ -53,4 +53,18 @@ public class HttpFunctionTests : IClassFixture<FunctionTestHost<Program>>
         var response = await _testHost.CallFunction("Hello", Encoding.UTF8.GetBytes("bar"));
         response.ShouldBe("Welcome to Azure Functions!bar");
     }
+
+    [Fact]
+    public async Task CallFunction_Throws()
+    {
+        var response = await _testHost.CallFunction("ThrowTask");
+        response.ShouldContain("Error thrown");
+    }
+
+    [Fact]
+    public async Task CallFunctionWithBytes_Throws()
+    {
+        var response = await _testHost.CallFunction("ThrowTask", Encoding.UTF8.GetBytes("bar"));
+        response.ShouldContain("Error thrown");
+    }
 }
