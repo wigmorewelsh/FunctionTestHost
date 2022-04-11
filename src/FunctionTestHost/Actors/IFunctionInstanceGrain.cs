@@ -2,14 +2,13 @@ using System;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using FunctionMetadataEndpoint;
-using FunctionTestHost.ServiceBusEmulator;
 using Google.Protobuf;
 using Orleans;
 using Orleans.CodeGeneration;
 
 namespace FunctionTestHost.Actors;
 
-public interface IFunctionInstanceGrain : IGrainWithStringKey, IQueueSubscriber
+public interface IFunctionInstanceGrain : IGrainWithStringKey
 {
     Task Init();
     Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message);
