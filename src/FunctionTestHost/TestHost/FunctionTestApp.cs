@@ -66,4 +66,6 @@ public class FunctionTestApp<TStartup> : IAsyncDisposable
     {
         await _functionHost.StopAsync(TimeSpan.Zero);
     }
+
+    public IServiceProvider Services => _functionHost.Services;
 }

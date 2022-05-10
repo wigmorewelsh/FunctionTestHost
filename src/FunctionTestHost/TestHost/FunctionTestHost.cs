@@ -99,6 +99,8 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
         return await CallFunction(functionName, await body.ReadAsByteArrayAsync()) ;
     }
 
+    public IServiceProvider Services => _functionHost.Services;
+
     private async Task<IPublicEndpoint> GetEndpointGrain(string functionName)
     {
         await CreateServer();
