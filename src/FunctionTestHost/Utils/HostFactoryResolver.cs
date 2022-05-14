@@ -37,7 +37,7 @@ internal class HostFactoryResolver
         var factory = programType.GetMethod(name, DeclaredOnlyLookup);
         if (!IsFactory<T>(factory))
         {
-            return null;
+            throw new MissingMethodException("Expected function application to contain a static method CreateHostBuilder that returns IHostBuilder");
         }
 
         return args => (T)factory!.Invoke(null, new object[] { args })!;
