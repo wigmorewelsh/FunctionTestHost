@@ -23,11 +23,23 @@
         <PackageReference Include="Grpc.AspNetCore" Version="2.43.0" />
         <PackageReference Include="Microsoft.Orleans.Server" Version="3.6.0" />
         <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.6.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="xunit.abstractions" Version="2.0.3" />
         <PackageReference Include="xunit.extensibility.core" Version="2.4.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="FunctionTestHost.targets" Pack="true" PackagePath="build/$(TargetFramework)/" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\FunctionTestHost.Tasks\FunctionTestHost.Tasks.csproj" PrivateAssets="All" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="../FunctionTestHost.Tasks/bin/$(Configuration)/$(TargetFramework)/FunctionTestHost.Tasks.dll" Pack="true" PackagePath="tasks/$(TargetFramework)/" />
     </ItemGroup>
 
 </Project>
