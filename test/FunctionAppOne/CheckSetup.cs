@@ -18,17 +18,11 @@ public class CheckSetup
     }
 
     [Function("CheckSettings")]
-    public HttpResponseData RCheckSettingsun(
+    public HttpResponseData CheckSettings(
         [HttpTrigger(AuthorizationLevel.Function, "get", "post")]
         HttpRequestData req,
         FunctionContext executionContext)
     {
-
-        var settingValue = _configuration.GetValue<string>("SomeSetting");
-        if (settingValue != "SomeValue")
-            throw new Exception("Settings not correct");
-
-
         var response = req.CreateResponse(HttpStatusCode.OK);
         response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
 
