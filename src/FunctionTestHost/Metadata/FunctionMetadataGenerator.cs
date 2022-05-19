@@ -36,7 +36,8 @@ internal class FunctionMetadataGenerator
         string[] runtimeAssemblies = Directory.GetFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll");
 
         var paths = new List<string>(runtimeAssemblies);
-        paths.Add(Path.GetDirectoryName(assemblyPath.Location));
+        string[] applicationAssemblies = Directory.GetFiles(Path.GetDirectoryName(assemblyPath.Location), "*.dll");
+        paths.AddRange(applicationAssemblies);
 
         var resolver = new PathAssemblyResolver(paths);
         
