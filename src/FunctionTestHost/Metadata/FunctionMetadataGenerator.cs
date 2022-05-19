@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using AzureFunctionsRpcMessages;
 
 namespace FunctionTestHost.Metadata;
@@ -31,16 +33,27 @@ internal class FunctionMetadataGenerator
 
         HashSet<Assembly> assemblies = new();
 
+        string[] runtimeAssemblies = Directory.GetFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll");
+
+        var paths = new List<string>(runtimeAssemblies);
+        paths.Add(Path.GetDirectoryName(assemblyPath.Location));
+
+        var resolver = new PathAssemblyResolver(paths);
+        
+        using var mlc = new MetadataLoadContext(resolver);
+        
+        
         void ScanAssembly(Assembly assemblyPath)
         {
             functions.AddRange(GenerateFunctionMetadata(assemblyPath));
 
             foreach (var path in assemblyPath.GetReferencedAssemblies())
             {
+                if(path.Name == null) continue;
                 if(path.Name.StartsWith("System")) continue;
                 if(path.Name.StartsWith("Microsoft")) continue;
-                
-                var assembly = Assembly.Load(path);
+
+                var assembly = mlc.LoadFromAssemblyName(path.Name);
                 if (assemblies.Contains(assembly)) continue;
 
                 assemblies.Add(assembly);
