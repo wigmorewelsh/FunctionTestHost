@@ -26,6 +26,7 @@
     <ItemGroup>
       <ProjectReference Include="..\FunctionAppOne\FunctionAppOne.csproj" />
       <ProjectReference Include="..\..\src\FunctionTestHost\FunctionTestHost.csproj" />
+      <ProjectReference Include="..\FunctionAppTwo\FunctionAppTwo.csproj" />
     </ItemGroup>
 
 </Project>
