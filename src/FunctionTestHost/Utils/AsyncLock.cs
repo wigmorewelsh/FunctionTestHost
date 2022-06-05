@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace FunctionTestHost.Utils;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
-internal class AsyncLock
+public class AsyncLock
 {
     private readonly SemaphoreSlim semaphore;
 

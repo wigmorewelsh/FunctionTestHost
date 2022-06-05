@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,29 +18,53 @@ using Xunit;
 
 namespace FunctionTestHost.TestHost;
 
-public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
+public interface IFunctionTestHostBuilder
 {
+    ITestHostBuilder AddFunction<T>();
+}
+
+public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsyncLifetime
+{
+    protected IHost _fakeHost;
+    protected List<FunctionTestApp> _functionHosts = new();
+    protected volatile bool _isDisposed;
+    protected volatile bool _isInit;
+    protected AsyncLock _lock = new();
+    public (int, int) HostPorts { get; protected set; }
+
     public FunctionTestHost()
     {
         HostPorts = TestClusterPortAllocator.Instance.AllocateConsecutivePortPairs(2);
     }
 
-    private AsyncLock _lock = new();
-    private volatile bool _isInit = false;
-    private volatile bool _isDisposed = false;
-
-    private IHost _fakeHost;
-    private FunctionTestApp<TStartup> _functionHost;
-    public (int, int) HostPorts { get; }
-
-    public async Task CreateServer()
+    async ValueTask IAsyncDisposable.DisposeAsync()
     {
-        if(_isInit) return;
+        if (_isDisposed) return;
         using var _ = await _lock.LockAsync();
-        if(_isInit) return;
+        if (_isDisposed) return;
 
-        var ports = TestClusterPortAllocator.Instance.AllocateConsecutivePortPairs(2);
+        foreach (var functionHost in _functionHosts) await functionHost.DisposeAsync();
+        await _fakeHost.StopAsync(TimeSpan.FromMilliseconds(0));
+        _isDisposed = true;
+    }
 
+    async Task IAsyncLifetime.DisposeAsync()
+    {
+        await ((IAsyncDisposable)this).DisposeAsync();
+    }
+
+    public async Task InitializeAsync()
+    {
+        await CreateServer();
+    }
+
+    public ITestHostBuilder AddFunction<T>()
+    {
+        throw new NotImplementedException();
+    }
+
+    protected async Task StartHost((int, int) ports)
+    {
         _fakeHost = Host.CreateDefaultBuilder()
             .UseOrleans(orleans =>
             {
@@ -54,39 +79,71 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 webBuilder.ConfigureKestrel(k =>
-                    k.ListenLocalhost(HostPorts.Item1, opt => opt.Protocols = HttpProtocols.Http2)).UseStartup<Startup>();
+                        k.ListenLocalhost(HostPorts.Item1, opt => opt.Protocols = HttpProtocols.Http2))
+                    .UseStartup<Startup>();
             })
             .Build();
 
         await _fakeHost.StartAsync();
+    }
 
-        _functionHost = new FunctionTestApp<TStartup>(this);
-        await _functionHost.Start();
+    protected virtual void ConfigureTestHost(IFunctionTestHostBuilder builder)
+    {
+        throw new NotImplementedException();
+    }
 
+    protected void AddFunction(FunctionTestApp functionTestApp)
+    {
+        _functionHosts.Add(functionTestApp);
+    }
+
+    protected async Task StartFunctions()
+    {
+        foreach (var functionHost in _functionHosts) await functionHost.Start();
+    }
+
+    public async Task CreateServer()
+    {
+        if (_isInit) return;
+        using var _ = await _lock.LockAsync();
+        if (_isInit) return;
+
+        var ports = TestClusterPortAllocator.Instance.AllocateConsecutivePortPairs(2);
+
+        await StartHost(ports);
+
+        await StartFunctions();
 
         _isInit = true;
     }
 
-    public async Task InitializeAsync()
+    private async Task<IPublicEndpoint> GetEndpointGrain(string functionName)
     {
         await CreateServer();
+        var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
+        if (functionName.StartsWith("admin")) return factory.GetGrain<IFunctionAdminEndpointGrain>(functionName);
+
+
+        return factory.GetGrain<IFunctionEndpointGrain>(functionName);
     }
 
-    async Task IAsyncLifetime.DisposeAsync()
+    public async Task<string> CallFunction(string functionName, byte[]? getBytes)
     {
-        await ((IAsyncDisposable)this).DisposeAsync();
-    }
+        var funcGrain = await GetEndpointGrain(functionName);
+        var httpBody = new RpcHttp();
+        if (getBytes != null)
+            httpBody.Body = new TypedData
+            {
+                Bytes = ByteString.CopyFrom(getBytes)
+            };
 
-    async ValueTask IAsyncDisposable.DisposeAsync()
-    {
-        if(_isDisposed) return;
-        using var _ = await _lock.LockAsync();
-        if(_isDisposed) return;
+        var response = await funcGrain.Call(httpBody);
+        if (response.ReturnValue?.Http is { } http)
+            if (http.Body.Bytes is { } bytes)
+                return Encoding.UTF8.GetString(Convert.FromBase64String(bytes.ToBase64()));
 
-        await _functionHost.DisposeAsync();
-        await _fakeHost.StopAsync(TimeSpan.FromMilliseconds(0));
-        _isDisposed = true;
-
+        if (response.Result?.Exception is { } err) return err.Message;
+        return response.Result.Result;
     }
 
     public async Task<string> CallFunction(string functionName)
@@ -96,53 +153,6 @@ public class FunctionTestHost<TStartup> : IAsyncDisposable, IAsyncLifetime
 
     public async Task<string> CallFunction(string functionName, JsonContent body)
     {
-        return await CallFunction(functionName, await body.ReadAsByteArrayAsync()) ;
-    }
-
-    public IServiceProvider Services => _functionHost.Services;
-
-    private async Task<IPublicEndpoint> GetEndpointGrain(string functionName)
-    {
-        await CreateServer();
-        var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
-        if (functionName.StartsWith("admin"))
-        {
-            return factory.GetGrain<IFunctionAdminEndpointGrain>(functionName);
-        }
-
-
-        return factory.GetGrain<IFunctionEndpointGrain>(functionName);
-    }
-
-    public virtual void ConfigureFunction(IHostBuilder host)
-    {
-    }
-
-    public async Task<string> CallFunction(string functionName, byte[]? getBytes)
-    {
-        var funcGrain = await GetEndpointGrain(functionName);
-        var httpBody = new RpcHttp();
-        if (getBytes != null)
-        {
-            httpBody.Body = new TypedData
-            {
-                Bytes = ByteString.CopyFrom(getBytes)
-            };
-        }
-
-        var response = await funcGrain.Call(httpBody);
-        if (response.ReturnValue?.Http is { } http)
-        {
-            if (http.Body.Bytes is { } bytes)
-            {
-                return Encoding.UTF8.GetString(Convert.FromBase64String(bytes.ToBase64()));
-            }
-        }
-
-        if (response.Result?.Exception is { } err)
-        {
-            return err.Message;
-        }
-        return response.Result.Result;
+        return await CallFunction(functionName, await body.ReadAsByteArrayAsync());
     }
 }
