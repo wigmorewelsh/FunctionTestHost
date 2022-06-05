@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -79,7 +80,13 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
                 await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
                 _bindingsParameters[loadRequest.FunctionId] = paramName;
+
+                var functionName = Path.GetFileNameWithoutExtension(loadRequest.Metadata.ScriptFile);
+                var endpointGrain2 = GrainFactory.GetGrain<IFunctionEndpointGrain>(functionName + "/" + loadRequest.Metadata.Name);
+                await endpointGrain2.Add(this.AsReference<IFunctionInstanceGrain>());
+                _bindingsParameters[functionName + "/" + loadRequest.FunctionId] = paramName;
             }
+
             if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
             {
                 if (servicebusBinding.Cardinality == BindingInfo.Types.Cardinality.Many)
