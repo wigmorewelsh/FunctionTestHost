@@ -14,7 +14,24 @@ using Xunit;
 
 namespace FunctionTestHost.TestHost;
 
-public class FunctionTestHost<TStartup> : FunctionTestHost
+public interface IConfigureFunctionTestHost
+{
+    (int, int) HostPorts { get; }
+    void ConfigureFunction(IHostBuilder host);
+}
+
+public class NullConfigureFunctionTestHost : IConfigureFunctionTestHost
+{
+    public NullConfigureFunctionTestHost((int, int) hostPorts)
+    {
+        HostPorts = hostPorts;
+    }
+
+    public (int, int) HostPorts { get; }
+    public void ConfigureFunction(IHostBuilder host) { }
+}
+
+public class FunctionTestHost<TStartup> : FunctionTestHost, IConfigureFunctionTestHost
 {
     private FunctionTestApp<TStartup> _functionTestApp;
 

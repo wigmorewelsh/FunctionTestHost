@@ -9,8 +9,8 @@ public class MultipleFunctionHost : FunctionTestHost.TestHost.FunctionTestHost
 {
     protected override void ConfigureTestHost(IFunctionTestHostBuilder builder)
     {
-        builder.AddFunction<FunctionAppOne.Program>()
-            .WithServiceConfiguration((IHostBuilder builder) => { });
+        builder.AddFunction<FunctionAppOne.Program>();
+            // .WithServiceConfiguration((IHostBuilder builder) => { });
         builder.AddFunction<FunctionAppTwo.Program>();
     }
 }

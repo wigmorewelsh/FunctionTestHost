@@ -14,12 +14,12 @@ namespace FunctionTestHost.TestHost;
 
 public class FunctionTestApp<TStartup> : FunctionTestApp 
 {
-    private readonly FunctionTestHost<TStartup> _functionTestHost;
+    private readonly IConfigureFunctionTestHost _functionTestHost;
     private AsyncLock _lock = new();
     private volatile bool _isInit = false;
     private IHost _functionHost;
 
-    public FunctionTestApp(FunctionTestHost<TStartup> functionTestHost)
+    public FunctionTestApp(IConfigureFunctionTestHost functionTestHost)
     {
         _functionTestHost = functionTestHost;
     }

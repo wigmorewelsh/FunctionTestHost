@@ -60,7 +60,8 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
 
     public ITestHostBuilder AddFunction<T>()
     {
-        throw new NotImplementedException();
+        AddFunction(new FunctionTestApp<T>(new NullConfigureFunctionTestHost(HostPorts)));
+        return null;
     }
 
     protected async Task StartHost((int, int) ports)
@@ -89,7 +90,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
 
     protected virtual void ConfigureTestHost(IFunctionTestHostBuilder builder)
     {
-        throw new NotImplementedException();
+        // throw new NotImplementedException();
     }
 
     protected void AddFunction(FunctionTestApp functionTestApp)
@@ -111,6 +112,8 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         var ports = TestClusterPortAllocator.Instance.AllocateConsecutivePortPairs(2);
 
         await StartHost(ports);
+
+        ConfigureTestHost(this);        
 
         await StartFunctions();
 
