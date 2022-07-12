@@ -60,8 +60,9 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
 
     public ITestHostBuilder AddFunction<T>()
     {
-        AddFunction(new FunctionTestApp<T>(new NullConfigureFunctionTestHost(HostPorts)));
-        return null;
+        var functionTestApp = new FunctionTestApp<T>(new NullConfigureFunctionTestHost(HostPorts));
+        AddFunction(functionTestApp);
+        return functionTestApp;
     }
 
     protected async Task StartHost((int, int) ports)

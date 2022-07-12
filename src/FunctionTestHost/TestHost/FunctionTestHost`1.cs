@@ -17,7 +17,6 @@ namespace FunctionTestHost.TestHost;
 public interface IConfigureFunctionTestHost
 {
     (int, int) HostPorts { get; }
-    void ConfigureFunction(IHostBuilder host);
 }
 
 public class NullConfigureFunctionTestHost : IConfigureFunctionTestHost
@@ -28,7 +27,6 @@ public class NullConfigureFunctionTestHost : IConfigureFunctionTestHost
     }
 
     public (int, int) HostPorts { get; }
-    public void ConfigureFunction(IHostBuilder host) { }
 }
 
 public class FunctionTestHost<TStartup> : FunctionTestHost, IConfigureFunctionTestHost
@@ -38,6 +36,7 @@ public class FunctionTestHost<TStartup> : FunctionTestHost, IConfigureFunctionTe
     public FunctionTestHost()
     {
         _functionTestApp = new FunctionTestApp<TStartup>(this);
+        _functionTestApp.WithServiceConfiguration(ConfigureFunction);
         AddFunction(_functionTestApp);
     }
 
