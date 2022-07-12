@@ -12,12 +12,13 @@ using Microsoft.Extensions.Options;
 
 namespace FunctionTestHost.TestHost;
 
-public class FunctionTestApp<TStartup> : FunctionTestApp 
+public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
 {
     private readonly IConfigureFunctionTestHost _functionTestHost;
     private AsyncLock _lock = new();
     private volatile bool _isInit = false;
     private IHost _functionHost;
+    private Action<IHostBuilder>? _serviceConfiguration;
 
     public FunctionTestApp(IConfigureFunctionTestHost functionTestHost)
     {
@@ -54,7 +55,7 @@ public class FunctionTestApp<TStartup> : FunctionTestApp
                 });
                 services.AddHostedService<MetadataClientRpc<TStartup>>();
             });
-        this._functionTestHost.ConfigureFunction(configureServices);
+        _serviceConfiguration?.Invoke(configureServices);
         _functionHost = configureServices
             .Build();
 
@@ -67,5 +68,11 @@ public class FunctionTestApp<TStartup> : FunctionTestApp
     public async ValueTask DisposeAsync()
     {
         await _functionHost.StopAsync(TimeSpan.Zero);
+    }
+
+    public ITestHostBuilder WithServiceConfiguration(Action<IHostBuilder> action)
+    {
+        _serviceConfiguration = action;
+        return this;
     }
 }
