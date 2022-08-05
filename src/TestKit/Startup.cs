@@ -22,6 +22,8 @@ public class Startup
         services.AddSingleton<LocalGrainActivator>();
         services.AddSingleton<IGrainActivator>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
         services.AddSingleton<ILocalGrainCatalog>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
+        services.AddTransient<IDataMapperFactory, HttpDataMapperFactory>();
+        services.AddTransient<IDataMapperFactory, ServiceBusDataMapperFactory>();
         services.AddGrpc();
     }
 

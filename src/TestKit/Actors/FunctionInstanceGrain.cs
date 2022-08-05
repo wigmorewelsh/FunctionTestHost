@@ -17,11 +17,13 @@ namespace TestKit.Actors;
 public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 {
     private readonly IGrainActivationContext _context;
+    private readonly IEnumerable<IDataMapperFactory> _dataMapperFactories;
     private Dictionary<string, DataMapper> _dataMappers = new();
 
-    public FunctionInstanceGrain(IGrainActivationContext context)
+    public FunctionInstanceGrain(IGrainActivationContext context, IEnumerable<IDataMapperFactory> dataMapperFactories)
     {
         _context = context;
+        _dataMapperFactories = dataMapperFactories;
     }
 
     public TaskCompletionSource<IServerStreamWriter<AzureFunctionsRpcMessages.StreamingMessage>> ResponseStream =
@@ -71,64 +73,24 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 RequestId = Guid.NewGuid().ToString(),
                 FunctionLoadRequest = loadRequest
             });
-            // TODO: extract this into external class and config
-            if (TryGetHttpBinding(loadRequest, out var paramName, out var httpBinding))
+
+            DataMapper? dataMapper = null;
+            foreach (var dataMapperFactory in _dataMapperFactories)
             {
-                var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
-                await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
-                _dataMappers.Add(loadRequest.FunctionId, new HttpDataMapper(paramName));
+                dataMapper = await dataMapperFactory.TryCreateDataMapper(loadRequest, this);
+                if (dataMapper != null) break;
             }
 
-            if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
-            {
-                var isBatch = servicebusBinding.Cardinality == BindingInfo.Types.Cardinality.Many;
+            if (dataMapper == null) continue;
+            _dataMappers.Add(loadRequest.FunctionId, dataMapper);
 
-                //TODO: subscribe to service bus grain
-                _dataMappers.Add(loadRequest.FunctionId, new ServiceBusDataMapper(isBatch, paramsSbName));
-            }
-           
             var functionName = Path.GetFileNameWithoutExtension(loadRequest.Metadata.ScriptFile);
             var directEndpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(functionName + "/" + loadRequest.Metadata.Name);
             await directEndpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
-            
+
             var adminEndpointGrain = GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
             await adminEndpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
         }
-    }
-
-    private bool TryGetServiceBusBinding(FunctionLoadRequest loadRequest, out string bindingName,
-        out BindingInfo bindingInfo)
-    {
-        foreach (var (key, value) in loadRequest.Metadata.Bindings)
-        {
-            if (value.Type == "ServiceBusTrigger")
-            {
-                bindingName = key;
-                bindingInfo = value;
-                return true;
-            }
-        }
-
-        bindingName = null;
-        bindingInfo = null;
-        return false;
-    }
-
-    private bool TryGetHttpBinding(FunctionLoadRequest loadRequest, out string bindingName, out BindingInfo bindingInfo)
-    {
-        foreach (var (key, value) in loadRequest.Metadata.Bindings)
-        {
-            if (value.Type == "HttpTrigger")
-            {
-                bindingName = key;
-                bindingInfo = value;
-                return true;
-            }
-        }
-
-        bindingName = null;
-        bindingInfo = null;
-        return false;
     }
 
     public async Task SetReady()
