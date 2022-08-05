@@ -18,7 +18,13 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 {
     private readonly IGrainActivationContext _context;
     private readonly IEnumerable<IDataMapperFactory> _dataMapperFactories;
-    private Dictionary<string, DataMapper> _dataMappers = new();
+    private readonly Dictionary<string, DataMapper> _dataMappers = new();
+    private readonly List<AzureFunctionsRpcMessages.FunctionLoadRequest> _bindings = new();
+    private readonly Dictionary<Guid, TaskCompletionSource<InvocationResponse>> pendingRequests = new();
+    
+    private readonly CancellationTokenSource _shutdown = new();
+    
+    private FunctionState State = FunctionState.Init;
 
     public FunctionInstanceGrain(IGrainActivationContext context, IEnumerable<IDataMapperFactory> dataMapperFactories)
     {
@@ -31,8 +37,6 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
     public TaskCompletionSource ReadyForRequests =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-    private CancellationTokenSource _shutdown = new();
 
     public override Task OnActivateAsync()
     {
@@ -52,15 +56,11 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         return base.OnDeactivateAsync();
     }
 
-    private FunctionState State = FunctionState.Init;
-
     public Task Init()
     {
         State = FunctionState.Init;
         return Task.CompletedTask;
     }
-
-    private readonly List<AzureFunctionsRpcMessages.FunctionLoadRequest> _bindings = new();
 
     public async Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message)
     {
@@ -74,12 +74,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 FunctionLoadRequest = loadRequest
             });
 
-            DataMapper? dataMapper = null;
-            foreach (var dataMapperFactory in _dataMapperFactories)
-            {
-                dataMapper = await dataMapperFactory.TryCreateDataMapper(loadRequest, this);
-                if (dataMapper != null) break;
-            }
+            var dataMapper = await TryCreateDataMapper(loadRequest);
 
             if (dataMapper == null) continue;
             _dataMappers.Add(loadRequest.FunctionId, dataMapper);
@@ -88,17 +83,25 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             var directEndpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(functionName + "/" + loadRequest.Metadata.Name);
             await directEndpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
 
-            var adminEndpointGrain = GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
+            var adminEndpointGrain =
+                GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
             await adminEndpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
         }
+    }
+
+    private async Task<DataMapper?> TryCreateDataMapper(FunctionLoadRequest loadRequest)
+    {
+        foreach (var dataMapperFactory in _dataMapperFactories)
+            if (await dataMapperFactory.TryCreateDataMapper(loadRequest, this) is { } dataMapper)
+                return dataMapper;
+
+        return null;
     }
 
     public async Task SetReady()
     {
         ReadyForRequests.TrySetResult();
     }
-
-    private Dictionary<Guid, TaskCompletionSource<InvocationResponse>> pendingRequests = new();
 
     public async Task<InvocationResponse> RequestHttpRequest(string functionId, RpcHttp body)
     {
