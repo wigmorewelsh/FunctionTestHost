@@ -9,7 +9,7 @@ public interface IFunctionInstanceGrain : IGrainWithStringKey
 {
     Task Init();
     Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message);
-    Task<AzureFunctionsRpcMessages.InvocationResponse> Request(string functionId);
+
     // Full name needed for code gen
     Task Response(AzureFunctionsRpcMessages.InvocationResponse response);
     Task SetReady();

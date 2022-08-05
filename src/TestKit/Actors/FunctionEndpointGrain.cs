@@ -20,17 +20,6 @@ public class FunctionEndpointGrain : Grain, IFunctionEndpointGrain
         return Task.CompletedTask;
     }
 
-    public async Task<AzureFunctionsRpcMessages.InvocationResponse> Call()
-    {
-        await init.Task;
-        if (grains.Any())
-            return await grains.First().Request(this.GetPrimaryKeyString());
-        else
-        {
-            throw new NotSupportedException("No functions avaliable");
-        }
-    }
-
     public async Task<AzureFunctionsRpcMessages.InvocationResponse> Call(AzureFunctionsRpcMessages.RpcHttp body)
     {
         await init.Task;

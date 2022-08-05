@@ -198,11 +198,6 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         return _serviceBusBindings.Contains(functionId);
     }
 
-    public async Task<InvocationResponse> Request(string functionId)
-    {
-        return await this.RequestHttpRequest(functionId, new RpcHttp());
-    }
-
     public Task Response(InvocationResponse response)
     {
         if (Guid.TryParse(response.InvocationId, out var guid))
@@ -213,11 +208,6 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 pendingRequests.Remove(guid);
             }
         }
-        return Task.CompletedTask;
-    }
-
-    public Task Notification()
-    {
         return Task.CompletedTask;
     }
 }

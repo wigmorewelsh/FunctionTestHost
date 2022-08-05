@@ -5,7 +5,6 @@ namespace TestKit.Actors;
 
 public interface IPublicEndpoint
 {
-    Task<AzureFunctionsRpcMessages.InvocationResponse> Call();
     Task<AzureFunctionsRpcMessages.InvocationResponse> Call(AzureFunctionsRpcMessages.RpcHttp body);
 }
 
