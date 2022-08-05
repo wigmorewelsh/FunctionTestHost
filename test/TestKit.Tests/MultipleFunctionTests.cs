@@ -27,7 +27,7 @@ public class MultipleFunctionTests : IClassFixture<MultipleFunctionHost>
     [Fact]
     public async Task SomeTest()
     {
-        await _host.CallFunction("FunctionAppOne/Hello");
-        await _host.CallFunction("FunctionAppTwo/Hello");
+        await _host.CallFunction("SampleFunctionOne/Hello");
+        await _host.CallFunction("SampleFunctionOne/Hello");
     }
 }

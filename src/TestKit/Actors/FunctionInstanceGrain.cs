@@ -12,54 +12,6 @@ using Orleans.Runtime;
 
 namespace TestKit.Actors;
 
-public abstract class DataMapper
-{
-    public abstract TypedData ToTypedData(string functionId, RpcHttp body);
-}
-
-public class ServiceBusDataMapper : DataMapper
-{
-    private readonly bool _isBatch;
-
-    public ServiceBusDataMapper(bool isBatch) : base()
-    {
-        _isBatch = isBatch;
-    }
-
-    public override TypedData ToTypedData(string functionId, RpcHttp body)
-    {
-        var typedData = new TypedData();
-        if (_isBatch)
-        {
-            var coll = new CollectionBytes();
-            coll.Bytes.Add(body.Body.Bytes);
-            typedData.CollectionBytes = coll;
-        }
-        else
-        {
-            typedData.Bytes = body.Body.Bytes;
-        }
-
-        return typedData;
-    }
-}
-
-public class HttpDataMapper : DataMapper
-{
-    public HttpDataMapper()
-    {
-    }
-
-    public override TypedData ToTypedData(string functionId, RpcHttp body)
-    {
-        var typedData = new TypedData
-        {
-            Http = body
-        };
-        return typedData;
-    }
-}
-
 [PreferLocalPlacement]
 [Reentrant]
 public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
@@ -107,7 +59,6 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     }
 
     private readonly List<AzureFunctionsRpcMessages.FunctionLoadRequest> _bindings = new();
-    private readonly Dictionary<string, string> _bindingsParameters = new();
 
     public async Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message)
     {
@@ -125,15 +76,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             {
                 var endpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
                 await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
-                _bindingsParameters[loadRequest.FunctionId] = paramName;
-
-                var functionName = Path.GetFileNameWithoutExtension(loadRequest.Metadata.ScriptFile);
-                var endpointGrain2 =
-                    GrainFactory.GetGrain<IFunctionEndpointGrain>(functionName + "/" + loadRequest.Metadata.Name);
-                await endpointGrain2.Add(this.AsReference<IFunctionInstanceGrain>());
-                _bindingsParameters[functionName + "/" + loadRequest.FunctionId] = paramName;
-
-                _dataMappers.Add(loadRequest.FunctionId, new HttpDataMapper());
+                _dataMappers.Add(loadRequest.FunctionId, new HttpDataMapper(paramName));
             }
 
             if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
@@ -141,14 +84,15 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                 var isBatch = servicebusBinding.Cardinality == BindingInfo.Types.Cardinality.Many;
 
                 //TODO: subscribe to service bus grain
-                var endpointGrain =
-                    GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
-                await endpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
-                _bindingsParameters[loadRequest.FunctionId] = paramsSbName;
-                _serviceBusBindings.Add(loadRequest.Metadata.Name);
-
-                _dataMappers.Add(loadRequest.FunctionId, new ServiceBusDataMapper(isBatch));
+                _dataMappers.Add(loadRequest.FunctionId, new ServiceBusDataMapper(isBatch, paramsSbName));
             }
+           
+            var functionName = Path.GetFileNameWithoutExtension(loadRequest.Metadata.ScriptFile);
+            var directEndpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(functionName + "/" + loadRequest.Metadata.Name);
+            await directEndpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
+            
+            var adminEndpointGrain = GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
+            await adminEndpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
         }
     }
 
@@ -193,7 +137,6 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     }
 
     private Dictionary<Guid, TaskCompletionSource<InvocationResponse>> pendingRequests = new();
-    [Obsolete] private readonly HashSet<string> _serviceBusBindings = new();
 
     public async Task<InvocationResponse> RequestHttpRequest(string functionId, RpcHttp body)
     {
@@ -221,7 +164,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
                     {
                         new ParameterBinding
                         {
-                            Name = _bindingsParameters[functionId],
+                            Name = dataMapper.ParamsName,
                             Data = typedData
                         }
                     },
@@ -233,11 +176,6 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         }
 
         throw new NotSupportedException($"cannot call function with: {functionId}");
-    }
-
-    public bool IsServiceBusCall(string functionId)
-    {
-        return _serviceBusBindings.Contains(functionId);
     }
 
     public Task Response(InvocationResponse response)
