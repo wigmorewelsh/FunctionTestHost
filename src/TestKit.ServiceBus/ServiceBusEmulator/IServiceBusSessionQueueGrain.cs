@@ -1,6 +1,6 @@
 using Orleans;
 
-namespace TestKit.ServiceBusEmulator;
+namespace TestKit.ServiceBus.ServiceBusEmulator;
 
 public interface IServiceBusSessionQueueGrain : IGrainWithStringKey, IQueueSubscriber, IBusQueue
 {

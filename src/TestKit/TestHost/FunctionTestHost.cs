@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Text;
@@ -30,6 +31,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     private protected volatile bool _isDisposed;
     private protected volatile bool _isInit;
     private protected AsyncLock _lock = new();
+    private List<Action<ISiloBuilder>> _hostConfigs = new();
     public (int, int) HostPorts { get; protected set; }
 
     public FunctionTestHost()
@@ -77,6 +79,10 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
                 orleans.UseLocalhostClustering(ports.Item1, ports.Item2);
                 orleans.ConfigureApplicationParts(parts =>
                     parts.AddApplicationPart(typeof(FunctionInstanceGrain).Assembly));
+                foreach (Action<ISiloBuilder> hostConfig in _hostConfigs)
+                {
+                    hostConfig.Invoke(orleans);
+                }
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
@@ -123,12 +129,18 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
 
     private async Task<IPublicEndpoint> GetEndpointGrain(string functionName)
     {
-        await CreateServer();
-        var factory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
+        var serviceProvider = await CreateHostServiceProvider();
+        var factory = serviceProvider.GetRequiredService<IGrainFactory>();
         if (functionName.StartsWith("admin")) return factory.GetGrain<IFunctionAdminEndpointGrain>(functionName);
 
 
         return factory.GetGrain<IFunctionEndpointGrain>(functionName);
+    }
+
+    public async Task<IServiceProvider> CreateHostServiceProvider()
+    {
+        await CreateServer();
+        return _fakeHost.Services;
     }
 
     public async Task<string> CallFunction(string functionName, byte[]? getBytes)
@@ -158,5 +170,10 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     public async Task<string> CallFunction(string functionName, JsonContent body)
     {
         return await CallFunction(functionName, await body.ReadAsByteArrayAsync());
+    }
+
+    public void ConfigureHost(Action<ISiloBuilder> func)
+    {
+       _hostConfigs.Add(func); 
     }
 }

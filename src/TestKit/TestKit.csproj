@@ -31,4 +31,15 @@
         <PackageReference Include="System.Reflection.MetadataLoadContext" Version="6.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Orleans_CodeGenInputs Remove="ServiceBusEmulator\IBusQueue.cs" />
+      <Orleans_CodeGenInputs Remove="ServiceBusEmulator\IQueueSubscriber.cs" />
+      <Orleans_CodeGenInputs Remove="ServiceBusEmulator\IServiceBusQueueGrain.cs" />
+      <Orleans_CodeGenInputs Remove="ServiceBusEmulator\IServiceBusSessionQueueGrain.cs" />
+      <Orleans_CodeGenInputs Remove="ServiceBusEmulator\Message.cs" />
+      <Orleans_CodeGenInputs Remove="ServiceBusEmulator\ServiceBusQueueGrain.cs" />
+      <Orleans_CodeGenInputs Remove="ServiceBusEmulator\ServiceBusQueueGrainBase.cs" />
+      <Orleans_CodeGenInputs Remove="ServiceBusEmulator\ServiceBusSessionQueueGrain.cs" />
+    </ItemGroup>
+
 </Project>

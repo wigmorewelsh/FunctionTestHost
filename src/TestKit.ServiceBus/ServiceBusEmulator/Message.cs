@@ -1,4 +1,4 @@
-namespace TestKit.ServiceBusEmulator;
+namespace TestKit.ServiceBus.ServiceBusEmulator;
 
 public class Message
 {

@@ -1,7 +1,6 @@
-using System.Threading.Tasks;
 using Orleans.Runtime;
 
-namespace TestKit.ServiceBusEmulator;
+namespace TestKit.ServiceBus.ServiceBusEmulator;
 
 public interface IQueueSubscriber : IAddressable
 {

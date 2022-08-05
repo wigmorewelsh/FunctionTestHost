@@ -2,11 +2,10 @@ using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Orleans;
-using TestKit.ServiceBusEmulator;
 
 namespace TestKit.Actors;
 
-public interface IFunctionInstanceGrain : IGrainWithStringKey, IQueueSubscriber
+public interface IFunctionInstanceGrain : IGrainWithStringKey 
 {
     Task Init();
     Task InitMetadata(FunctionMetadataEndpoint.StreamingMessage message);

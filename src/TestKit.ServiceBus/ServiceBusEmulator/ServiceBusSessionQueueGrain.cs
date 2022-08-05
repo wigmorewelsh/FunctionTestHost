@@ -1,23 +1,26 @@
 using System.Collections.Immutable;
-using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 
-namespace TestKit.ServiceBusEmulator;
+namespace TestKit.ServiceBus.ServiceBusEmulator;
 
-public class ServiceBusQueueGrain : ServiceBusQueueGrainBase, IServiceBusQueueGrain
+public class ServiceBusSessionQueueGrain : ServiceBusQueueGrainBase, IServiceBusSessionQueueGrain
 {
+    private IQueueSubscriber? subscriber = null;
+
     public Task Notification()
     {
         throw new System.NotImplementedException();
     }
 
-    public Task Enqueue(Message message)
+    public Task Enqueue(ServiceBusMessage message)
     {
-        throw new System.NotImplementedException();
+        _queue.Enqueue(message);
+        return Task.CompletedTask;
     }
 
-    public Task<Message> Recieve()
+    public async Task<ServiceBusMessage> Recieve()
     {
-        throw new System.NotImplementedException();
+        return _queue.Peek();
     }
 
     public Task<ImmutableList<Message>> Recieve(int count)
