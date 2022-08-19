@@ -4,7 +4,7 @@ using Grpc.Core;
 
 namespace TestKit.Actors;
 
-public class FunctionGrainContext
+internal class FunctionGrainContext
 {
     private readonly TaskScheduler _scheduler;
     private readonly FunctionInstanceGrain _functionInstanceGrain;

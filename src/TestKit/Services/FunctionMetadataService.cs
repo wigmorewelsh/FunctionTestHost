@@ -6,7 +6,7 @@ using TestKit.Actors;
 
 namespace TestKit.Services;
 
-public class FunctionMetadataService : FunctionRpc.FunctionRpcBase
+internal class FunctionMetadataService : FunctionRpc.FunctionRpcBase
 {
     private readonly IGrainFactory _grainFactory;
 

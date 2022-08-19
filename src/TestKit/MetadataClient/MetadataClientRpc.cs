@@ -11,7 +11,7 @@ using StreamingMessage = FunctionMetadataEndpoint.StreamingMessage;
 
 namespace TestKit.MetadataClient;
 
-public class GrpcWorkerStartupOptions
+internal class GrpcWorkerStartupOptions
 {
     public string? Host { get; set; }
 
@@ -24,7 +24,7 @@ public class GrpcWorkerStartupOptions
     public int GrpcMaxMessageLength { get; set; }
 }
 
-public class MetadataClientRpc<TStartup> : IHostedService
+internal class MetadataClientRpc<TStartup> : IHostedService
 {
     private readonly FunctionRpc.FunctionRpcClient _client;
     private readonly IOptions<GrpcWorkerStartupOptions> _options;

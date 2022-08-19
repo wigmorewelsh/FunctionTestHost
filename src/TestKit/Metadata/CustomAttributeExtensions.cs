@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace TestKit.Metadata;
 
-public static class CustomAttributeExtensions
+internal static class CustomAttributeExtensions
 {
     public static IDictionary<string, object> GetAllDefinedProperties(this CustomAttributeData attribute)
     {

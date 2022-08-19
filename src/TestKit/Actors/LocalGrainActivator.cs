@@ -7,7 +7,7 @@ using Orleans.Runtime;
 
 namespace TestKit.Actors;
 
-public class LocalGrainActivator : DefaultGrainActivator, ILocalGrainCatalog
+internal class LocalGrainActivator : DefaultGrainActivator, ILocalGrainCatalog
 {
     private ConcurrentDictionary<IGrainIdentity, FunctionGrainContext> localGrains = new();
 

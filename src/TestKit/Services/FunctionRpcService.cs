@@ -9,7 +9,7 @@ using TestKit.Actors;
 
 namespace TestKit.Services;
 
-public class FunctionRpcService : FunctionRpc.FunctionRpcBase
+internal class FunctionRpcService : FunctionRpc.FunctionRpcBase
 {
     private readonly IGrainFactory _grainFactory;
     private readonly ILocalGrainCatalog _localGrainCatalog;

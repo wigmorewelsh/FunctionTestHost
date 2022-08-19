@@ -17,7 +17,7 @@ public interface IFunctionInstanceGrain : IGrainWithStringKey
 }
 
 [Serializable]
-public class Envelope<T> where T : IMessage<T>
+internal class Envelope<T> where T : IMessage<T>
 {
     private byte[] _bytes;
 

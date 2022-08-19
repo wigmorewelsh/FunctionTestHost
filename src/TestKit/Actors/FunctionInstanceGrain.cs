@@ -14,7 +14,7 @@ namespace TestKit.Actors;
 
 [PreferLocalPlacement]
 [Reentrant]
-public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
+internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 {
     private readonly IGrainActivationContext _context;
     private readonly IEnumerable<IDataMapperFactory> _dataMapperFactories;
@@ -77,6 +77,7 @@ public class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             var dataMapper = await TryCreateDataMapper(loadRequest);
 
             if (dataMapper == null) continue;
+            //TODO: add default mapper
             _dataMappers.Add(loadRequest.FunctionId, dataMapper);
 
             var functionName = Path.GetFileNameWithoutExtension(loadRequest.Metadata.ScriptFile);
