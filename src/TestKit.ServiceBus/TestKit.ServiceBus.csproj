@@ -4,6 +4,8 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RepositoryUrl>https://github.com/wigmorewelsh/FunctionTestHost</RepositoryUrl>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
