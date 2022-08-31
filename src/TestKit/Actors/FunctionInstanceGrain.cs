@@ -82,11 +82,11 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
             var functionName = Path.GetFileNameWithoutExtension(loadRequest.Metadata.ScriptFile);
             var directEndpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(functionName + "/" + loadRequest.Metadata.Name);
-            await directEndpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
+            await directEndpointGrain.Add(loadRequest.FunctionId, this.AsReference<IFunctionInstanceGrain>());
 
             var adminEndpointGrain =
                 GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
-            await adminEndpointGrain.Add(this.AsReference<IFunctionInstanceGrain>());
+            await adminEndpointGrain.Add(loadRequest.FunctionId, this.AsReference<IFunctionInstanceGrain>());
         }
     }
 

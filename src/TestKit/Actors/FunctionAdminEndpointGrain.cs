@@ -10,12 +10,12 @@ namespace TestKit.Actors;
 [Reentrant]
 public class FunctionAdminEndpointGrain : Grain, IFunctionAdminEndpointGrain
 {
-    private List<IFunctionInstanceGrain> grains = new();
+    private List<(string functionId, IFunctionInstanceGrain functionInstanceGrain)> grains = new();
     private TaskCompletionSource init = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    public Task Add(IFunctionInstanceGrain functionInstanceGrain)
+    public Task Add(string functionId, IFunctionInstanceGrain functionInstanceGrain)
     {
-        grains.Add(functionInstanceGrain);
+        grains.Add((functionId, functionInstanceGrain));
         init.TrySetResult();
         return Task.CompletedTask;
     }
@@ -24,7 +24,10 @@ public class FunctionAdminEndpointGrain : Grain, IFunctionAdminEndpointGrain
     {
         await init.Task;
         if (grains.Any())
-            return await grains.First().RequestHttpRequest(this.GetPrimaryKeyString().Replace("admin/", ""), body);
+        {
+            var (functionId, grain) = grains.First();
+            return await grain.RequestHttpRequest(functionId, body);
+        }
         else
         {
             throw new NotSupportedException("No functions avaliable");

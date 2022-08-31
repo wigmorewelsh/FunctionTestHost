@@ -22,7 +22,7 @@ public class HttpDataMapperFactory : IDataMapperFactory
         if (TryGetHttpBinding(loadRequest, out var paramName, out var httpBinding))
         {
             var endpointGrain = _grainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
-            await endpointGrain.Add(GrainExtensions.AsReference<IFunctionInstanceGrain>(functionInstance));
+            await endpointGrain.Add(loadRequest.FunctionId, GrainExtensions.AsReference<IFunctionInstanceGrain>(functionInstance));
             dataMapper = new HttpDataMapper(paramName);
         }
 

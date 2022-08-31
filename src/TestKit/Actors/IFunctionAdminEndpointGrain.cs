@@ -10,5 +10,5 @@ public interface IPublicEndpoint
 
 public interface IFunctionAdminEndpointGrain : IPublicEndpoint, IGrainWithStringKey
 {
-    Task Add(IFunctionInstanceGrain functionInstanceGrain);
+    Task Add(string functionId, IFunctionInstanceGrain functionInstanceGrain);
 }

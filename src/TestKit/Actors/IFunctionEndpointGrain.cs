@@ -5,5 +5,5 @@ namespace TestKit.Actors;
 
 public interface IFunctionEndpointGrain : IPublicEndpoint, IGrainWithStringKey
 {
-    Task Add(IFunctionInstanceGrain functionInstanceGrain);
+    Task Add(string functionId, IFunctionInstanceGrain functionInstanceGrain);
 }
