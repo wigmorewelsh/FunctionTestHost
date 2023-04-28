@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using FunctionMetadataEndpoint;
 using Grpc.Net.Client;
@@ -22,6 +23,8 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
 
     public FunctionTestApp(IConfigureFunctionTestHost functionTestHost)
     {
+        Environment.SetEnvironmentVariable("FUNCTIONS_APPLICATION_DIRECTORY", Environment.CurrentDirectory);
+        Environment.SetEnvironmentVariable("FUNCTIONS_WORKER_DIRECTORY", Environment.CurrentDirectory);
         _functionTestHost = functionTestHost;
     }
 
@@ -62,7 +65,7 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
         await _functionHost.StartAsync();
         _isInit = true;
     }
-    
+
     public IServiceProvider Services => _functionHost.Services;
 
     public async ValueTask DisposeAsync()
