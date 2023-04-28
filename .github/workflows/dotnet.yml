@@ -49,8 +49,6 @@ jobs:
             - Second Change
           draft: false
           prerelease: false
-      - name: Setup auth github
-        run: dotnet nuget add source --username wigmorewelsh --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/wigmorewelsh/index.json"
       - name: Publish github
         run: dotnet nuget push "**/*.nupkg" --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}
       - name: Publish Nuget
