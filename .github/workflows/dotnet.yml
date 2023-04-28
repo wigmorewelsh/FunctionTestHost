@@ -51,7 +51,7 @@ jobs:
           prerelease: false
       - name: Setup auth github
         if: contains(github.ref, 'master')
-        run: dotnet nuget add source --name github "https://nuget.pkg.github.com/OWNER/index.json"
+        run: dotnet nuget add source --name github "https://nuget.pkg.github.com/NAMESPACE/index.json"
       - name: Publish github
         if: contains(github.ref, 'master')
         run: dotnet nuget push "**/*.nupkg" --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}
