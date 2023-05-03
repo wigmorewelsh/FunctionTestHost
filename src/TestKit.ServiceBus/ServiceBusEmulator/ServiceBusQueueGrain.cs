@@ -26,9 +26,14 @@ public class ServiceBusQueueGrain : ServiceBusQueueGrainBase, IServiceBusQueueGr
         throw new System.NotImplementedException();
     }
 
-    public Task Confirm(int tag)
+    public Task Abandon(string messageId)
     {
-        throw new System.NotImplementedException();
+        return Task.CompletedTask;
+    }
+
+    public Task Complete(string messageId)
+    {
+        return Task.CompletedTask;
     }
 
     public Task Subscribe(IQueueSubscriber queueSubscriber)

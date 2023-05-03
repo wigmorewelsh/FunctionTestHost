@@ -9,6 +9,7 @@ public interface IBusQueue : IAddressable
     Task Enqueue(ServiceBusMessage message);
     Task<ServiceBusMessage> Recieve();
     Task<ImmutableList<Message>> Recieve(int count);
-    Task Confirm(int tag);
-    Task Subscribe(IQueueSubscriber queueSubscriber); 
+    Task Abandon(string messageId);
+    Task Complete(string messageId);
+    Task Subscribe(IQueueSubscriber queueSubscriber);
 }
