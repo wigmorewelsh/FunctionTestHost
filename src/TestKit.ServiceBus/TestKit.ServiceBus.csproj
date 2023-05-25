@@ -1,23 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <RepositoryUrl>https://github.com/wigmorewelsh/FunctionTestHost</RepositoryUrl>
-        <IsPackable>false</IsPackable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>FunctionTestHost.ServiceBus</PackageId>
+    <PackageDescription>Host for integration testing Azure Isolated Functions</PackageDescription>
+    <RepositoryUrl>https://github.com/wigmorewelsh/FunctionTestHost</RepositoryUrl>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\TestKit\TestKit.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TestKit\TestKit.csproj" />
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.6.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.9.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Azure.Messaging.ServiceBus"  />
+  </ItemGroup>
 
 </Project>

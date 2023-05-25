@@ -17,18 +17,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
+        <PackageReference Include="GitVersion.MsBuild" >
             <PrivateAssets>All</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Grpc.AspNetCore" Version="2.43.0" />
-        <PackageReference Include="Microsoft.Orleans.Server" Version="3.6.0" />
-        <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.6.0">
+        <PackageReference Include="Grpc.AspNetCore"  />
+        <PackageReference Include="Microsoft.Orleans.Server"  />
+        <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" >
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit.abstractions" Version="2.0.3" />
-        <PackageReference Include="xunit.extensibility.core" Version="2.4.2" />
-        <PackageReference Include="System.Reflection.MetadataLoadContext" Version="6.0.0" />
+        <PackageReference Include="xunit.abstractions"  />
+        <PackageReference Include="xunit.extensibility.core"  />
+        <PackageReference Include="System.Reflection.MetadataLoadContext"  />
     </ItemGroup>
 
     <ItemGroup>
