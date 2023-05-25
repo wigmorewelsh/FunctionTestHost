@@ -6,11 +6,11 @@ using TestKit.ServiceBus.ServiceBusEmulator;
 
 namespace TestKit.ServiceBus;
 
-public class TestKitReciever : ServiceBusReceiver
+public class TestKitReceiver : ServiceBusReceiver
 {
     private readonly IServiceBusQueueGrain _getGrain;
 
-    public TestKitReciever(IServiceBusQueueGrain getGrain)
+    public TestKitReceiver(IServiceBusQueueGrain getGrain)
     {
         _getGrain = getGrain;
     }
@@ -21,7 +21,19 @@ public class TestKitReciever : ServiceBusReceiver
 
         return ToReceived(next);
     }
-    
+
+    public override async Task CompleteMessageAsync(ServiceBusReceivedMessage message,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        await _getGrain.Complete(message.MessageId);
+    }
+
+    public override async Task AbandonMessageAsync(ServiceBusReceivedMessage message, IDictionary<string, object> propertiesToModify = null,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        await _getGrain.Abandon(message.MessageId);
+    }
+
     private ServiceBusReceivedMessage ToReceived(ServiceBusMessage message)
     {
         return ServiceBusModelFactory.ServiceBusReceivedMessage(

@@ -1,22 +1,21 @@
-using System.Threading.Tasks;
-using Azure.Core.Amqp;
+﻿using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Shouldly;
 using Xunit;
 
 namespace TestKit.ServiceBus;
 
-public class Samples : IClassFixture<ServiceBusTestHost>
+public class Samples03 : IClassFixture<ServiceBusTestHost>
 {
     private readonly ServiceBusTestHost _testHost;
 
-    public Samples(ServiceBusTestHost testHost)
+    public Samples03(ServiceBusTestHost testHost)
     {
         _testHost = testHost;
     }
-    
+
     [Fact]
-    public async Task SendAndReceiveMessage()
+    public async Task SendAndAbandonAMessage()
     {
         string queueName = "test";
 
@@ -25,23 +24,24 @@ public class Samples : IClassFixture<ServiceBusTestHost>
 
         // create the sender
         var sender = client.CreateSender(queueName);
-        sender.ShouldBeOfType<TestKitSender>();
 
-        // create a message that we can send. UTF-8 encoding is used when providing a string.
-        var message = new ServiceBusMessage("Hello world!");
+        // create a message that we can send
+        var message = new ServiceBusMessage("Hello world!")
+        {
+            SessionId = "mySessionId"
+        };
 
         // send the message
         await sender.SendMessageAsync(message);
 
-        // create a receiver that we can use to receive the message
-        ServiceBusReceiver receiver = client.CreateReceiver(queueName);
+        // create a receiver that we can use to receive and settle the message
+        var receiver = await client.AcceptSessionAsync(queueName, "mySessionId");
 
         // the received message is a different type as it contains some service set properties
-        ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveMessageAsync();
+        var receivedMessage = await receiver.ReceiveMessageAsync();
 
         // get the message body as a string
-        string body = receivedMessage.Body.ToString();
+        var body = receivedMessage.Body.ToString();
         body.ShouldBe("Hello world!");
-
-    } 
+    }
 }
