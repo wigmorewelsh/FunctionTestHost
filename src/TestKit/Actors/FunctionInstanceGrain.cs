@@ -76,20 +76,36 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
             var dataMapper = await TryCreateDataMapper(loadRequest);
 
-            if (dataMapper == null) continue;
-            //TODO: add default mapper
+            if (dataMapper == null && TryGetAnyBinding(loadRequest, out var bindingName, out var _))
+                dataMapper = new HttpDataMapper(bindingName);
+            if (dataMapper == null)continue;
             _dataMappers.Add(loadRequest.FunctionId, dataMapper);
 
+            //named function endpoints for multi function hosting
             var functionName = Path.GetFileNameWithoutExtension(loadRequest.Metadata.ScriptFile);
             var directEndpointGrain = GrainFactory.GetGrain<IFunctionEndpointGrain>(functionName + "/" + loadRequest.Metadata.Name);
             await directEndpointGrain.Add(loadRequest.FunctionId, this.AsReference<IFunctionInstanceGrain>());
 
-            var adminEndpointGrain =
-                GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
+            //admin endpoints for direct calls
+            var adminEndpointGrain = GrainFactory.GetGrain<IFunctionAdminEndpointGrain>("admin/" + loadRequest.Metadata.Name);
             await adminEndpointGrain.Add(loadRequest.FunctionId, this.AsReference<IFunctionInstanceGrain>());
         }
     }
 
+    private bool TryGetAnyBinding(FunctionLoadRequest loadRequest, out string bindingName, out BindingInfo bindingInfo)
+    {
+        foreach (var (key, value) in loadRequest.Metadata.Bindings)
+        {
+            bindingName = key;
+            bindingInfo = value;
+            return true;
+        }
+
+        bindingName = null;
+        bindingInfo = null;
+        return false;
+    }
+    
     private async Task<DataMapper?> TryCreateDataMapper(FunctionLoadRequest loadRequest)
     {
         foreach (var dataMapperFactory in _dataMapperFactories)
