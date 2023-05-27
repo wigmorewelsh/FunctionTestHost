@@ -22,12 +22,14 @@ namespace TestKit.TestHost;
 public interface IFunctionTestHostBuilder
 {
     ITestHostBuilder AddFunction<T>();
+    void ConfigureHostExtensions(Action<IServiceCollection> serviceCollection);
 }
 
 public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsyncLifetime
 {
     private protected IHost _fakeHost;
     private protected List<FunctionTestApp> _functionHosts = new();
+    private protected List<Action<IServiceCollection>> _hostExtensions = new();
     private protected volatile bool _isDisposed;
     private protected volatile bool _isInit;
     private protected AsyncLock _lock = new();
@@ -67,6 +69,8 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         return functionTestApp;
     }
 
+
+
     private protected async Task StartHost((int, int) ports)
     {
         _fakeHost = Host.CreateDefaultBuilder()
@@ -86,25 +90,32 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
-                webBuilder.ConfigureKestrel(k =>
+                var builder = webBuilder.ConfigureKestrel(k =>
                         k.ListenLocalhost(HostPorts.Item1, opt => opt.Protocols = HttpProtocols.Http2))
                     .UseStartup<Startup>();
+                foreach (var extension in _hostExtensions)
+                {
+                    builder.ConfigureServices(extension);
+                }
+                
             })
             .Build();
 
         await _fakeHost.StartAsync();
     }
 
-    protected virtual void ConfigureTestHost(IFunctionTestHostBuilder builder)
-    {
-        // throw new NotImplementedException();
-    }
+    protected virtual void ConfigureTestHost(IFunctionTestHostBuilder builder) { }
 
     protected void AddFunction(FunctionTestApp functionTestApp)
     {
         _functionHosts.Add(functionTestApp);
     }
 
+    public void ConfigureHostExtensions(Action<IServiceCollection> serviceCollection)
+    {
+        _hostExtensions.Add(serviceCollection);
+    }
+    
     private protected async Task StartFunctions()
     {
         foreach (var functionHost in _functionHosts) await functionHost.Start();

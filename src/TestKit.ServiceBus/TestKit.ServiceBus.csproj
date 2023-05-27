@@ -15,11 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" >
+    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Azure.Messaging.ServiceBus"  />
+    <PackageReference Include="Azure.Messaging.ServiceBus" />
   </ItemGroup>
 
 </Project>

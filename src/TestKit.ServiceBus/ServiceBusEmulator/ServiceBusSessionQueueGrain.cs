@@ -28,14 +28,14 @@ public class ServiceBusSessionQueueGrain : ServiceBusQueueGrainBase, IServiceBus
         throw new System.NotImplementedException();
     }
 
-    public async Task Abandon(string messageId)
+    public Task Abandon(string messageId)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 
     public Task Complete(string messageId)
     {
-        throw new System.NotImplementedException();
+        return Task.CompletedTask;
     }
 
     public Task Subscribe(IQueueSubscriber queueSubscriber)

@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace TestKit.TestHost;
@@ -27,9 +28,11 @@ public class FunctionTestHost<TStartup> : FunctionTestHost, IConfigureFunctionTe
         _functionTestApp = new FunctionTestApp<TStartup>(this);
         _functionTestApp.WithServiceConfiguration(ConfigureFunction);
         AddFunction(_functionTestApp);
+        base.ConfigureHostExtensions(ConfigureExtensions);
     }
 
     public virtual void ConfigureFunction(IHostBuilder host) { }
+    public virtual void ConfigureExtensions(IServiceCollection serviceCollection) { }
     
     public IServiceProvider Services => _functionTestApp.Services;
 }

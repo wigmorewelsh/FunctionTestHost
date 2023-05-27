@@ -23,7 +23,6 @@ public class Startup
         services.AddSingleton<IGrainActivator>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
         services.AddSingleton<ILocalGrainCatalog>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
         services.AddTransient<IDataMapperFactory, HttpDataMapperFactory>();
-        services.AddTransient<IDataMapperFactory, ServiceBusDataMapperFactory>();
         services.AddGrpc();
     }
 
@@ -41,9 +40,6 @@ public class Startup
         {
             endpoints.MapGrpcService<FunctionRpcService>();
             endpoints.MapGrpcService<FunctionMetadataService>();
-            endpoints.Map("/api/function", async context =>
-            {
-            });
 
             endpoints.MapGet("/",
                 async context =>
