@@ -1,12 +1,10 @@
 TODO
 ----
-2. Clone port randomizer from orleans
 3. Enable nuget package checking - from 1.0
 4. Really basic support for calling service bus in bindings
 5. Handle error from function invoke
 6. Concurrent tests to check consistancy
 7. Sort out release notes
-8. Move tests into seperate folder
 
 Test Server
 -----------
