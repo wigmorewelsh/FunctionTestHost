@@ -120,6 +120,45 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         ReadyForRequests.TrySetResult();
     }
 
+    public async Task<InvocationResponse> Request(string functionId, TypedData typedData)
+    {
+        await ReadyForRequests.Task;
+        var stream = await ResponseStream.Task;
+
+        var task = new TaskCompletionSource<InvocationResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var taskId = Guid.NewGuid();
+        pendingRequests[taskId] = task;
+        var rpcTraceContext = new RpcTraceContext
+        {
+            TraceParent = "123"
+        };
+        if (_dataMappers.TryGetValue(functionId, out var dataMapper))
+        {
+            var streamingMessage = new AzureFunctionsRpcMessages.StreamingMessage
+            {
+                RequestId = Guid.NewGuid().ToString(),
+                InvocationRequest = new InvocationRequest()
+                {
+                    FunctionId = functionId,
+                    InvocationId = taskId.ToString(),
+                    InputData =
+                    {
+                        new ParameterBinding
+                        {
+                            Name = dataMapper.ParamsName,
+                            Data = typedData
+                        }
+                    },
+                    TraceContext = rpcTraceContext
+                }
+            };
+            await stream.WriteAsync(streamingMessage);
+            return await task.Task;
+        }
+
+        throw new NotSupportedException($"cannot call function with: {functionId}");
+    }
+    
     public async Task<InvocationResponse> RequestHttpRequest(string functionId, RpcHttp body)
     {
         await ReadyForRequests.Task;

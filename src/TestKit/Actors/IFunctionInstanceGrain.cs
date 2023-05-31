@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AzureFunctionsRpcMessages;
 using Google.Protobuf;
 using Orleans;
 
@@ -14,6 +15,7 @@ public interface IFunctionInstanceGrain : IGrainWithStringKey
     Task Response(AzureFunctionsRpcMessages.InvocationResponse response);
     Task SetReady();
     Task<AzureFunctionsRpcMessages.InvocationResponse> RequestHttpRequest(string functionId, AzureFunctionsRpcMessages.RpcHttp body);
+    Task<AzureFunctionsRpcMessages.InvocationResponse> Request(string functionId, AzureFunctionsRpcMessages.TypedData typedData);
 }
 
 [Serializable]
