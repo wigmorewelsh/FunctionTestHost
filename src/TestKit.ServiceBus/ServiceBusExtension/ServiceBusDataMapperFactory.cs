@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using Orleans;
 using Orleans.Runtime;
+using TestKit.ServiceBus.ServiceBusEmulator;
 
 namespace TestKit.Actors;
 
@@ -21,8 +22,11 @@ public class ServiceBusDataMapperFactory : IDataMapperFactory
         if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
         {
             var isBatch = servicebusBinding.Cardinality == BindingInfo.Types.Cardinality.Many;
+            // this is horrible
+            var queueName = servicebusBinding.Properties["queueName"]; 
 
-            //TODO: subscribe to service bus grain
+            var endpointGrain = _grainFactory.GetGrain<IServiceBusQueueGrain>(queueName);
+            await endpointGrain.Subscribe(loadRequest.FunctionId, GrainExtensions.AsReference<IFunctionInstanceGrain>(functionInstance));
             dataMapper = new ServiceBusDataMapper(isBatch, paramsSbName);
         }
         return dataMapper;

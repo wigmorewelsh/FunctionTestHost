@@ -10,6 +10,11 @@ namespace TestKit.Tests;
 
 public class FunctionTestCallbackHost : FunctionTestHost<Program>
 {
+    public FunctionTestCallbackHost()
+    {
+        this.AddServiceBusTestHost();
+    }
+    
     public IExecutionCallback ExecutionCallback { get; private set; }
 
     public override void ConfigureFunction(IHostBuilder host)
@@ -19,7 +24,7 @@ public class FunctionTestCallbackHost : FunctionTestHost<Program>
         {
             services.AddSingleton(ExecutionCallback);
         });
-        
+
     }
 
     public override void ConfigureExtensions(IServiceCollection serviceCollection)

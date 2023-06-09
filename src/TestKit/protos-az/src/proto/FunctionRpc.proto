@@ -441,7 +441,10 @@ message BindingInfo {
   Direction direction = 3;
 
   DataType data_type = 4;
-
+  
+  // Properties for binding metadata
+  map<string, string> properties = 5;
+  
   Cardinality cardinality = 99;
 }
 

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using FunctionMetadataEndpoint;
+using Google.Protobuf.Collections;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using TestKit.Metadata;
@@ -47,12 +48,21 @@ internal class MetadataClientRpc<TStartup> : IHostedService
             var bindingInfos = new Dictionary<string, BindingInfo>();
             foreach (IDictionary<string, object> binding in sdkFunctionMetadata.Bindings)
             {
+                var map = new MapField<string, string>();
+                foreach (var (key, value) in binding)
+                {
+                    if (value is string str)
+                    {
+                        map.Add(key, str);
+                    }
+                }
                 bindingInfos[binding["Name"] as string] = new BindingInfo
                 {
                     Direction = Direction(binding),
                     Type = binding["Type"] as string,
                     DataType = DataType(binding),
-                    Cardinality = Cardinality(binding)
+                    Cardinality = Cardinality(binding),
+                    Properties = { map }
                 };
             }
             functionLoadRequests.Add(new FunctionLoadRequest
