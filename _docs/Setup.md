@@ -42,16 +42,12 @@ The function under test can be customized by overriding the `ConfigureFunction` 
 ```csharp
 public class FunctionTestCallbackHost : FunctionTestHost<Program>
 {
-    public IExecutionCallback ExecutionCallback { get; private set; }
-
     public override void ConfigureFunction(IHostBuilder host)
     {
-        ExecutionCallback = Substitute.For<IExecutionCallback>();
         host.ConfigureServices(services =>
         {
-            services.AddSingleton(ExecutionCallback);
+           ... add services here ...
         });
-        
     }
 }
 ```
