@@ -8,11 +8,6 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        functionsdk: [ '1.9.0', '1.10.0', '1.11.0' ]
-        workerversion: [ '1.13.0', '1.14.0', '1.15.0', '1.16.0' ]
-
     runs-on: ubuntu-latest
 
     steps:
