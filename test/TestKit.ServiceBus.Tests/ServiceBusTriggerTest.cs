@@ -15,7 +15,7 @@ public class ServiceBusTriggerTest : IClassFixture<FunctionTestCallbackHost>
         _testCallbackHost = testCallbackHost;
     }
 
-    [Fact]
+    [Fact(Skip = "Service bus not being published")]
     public async Task CallSimpleFunction()
     {
         _testCallbackHost.ExecutionCallback.ClearReceivedCalls();
