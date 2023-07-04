@@ -76,8 +76,8 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
             var dataMapper = await TryCreateDataMapper(loadRequest);
 
-            if (dataMapper == null && TryGetAnyBinding(loadRequest, out var bindingName, out var _))
-                dataMapper = new HttpDataMapper(bindingName);
+            if (dataMapper == null && TryGetAnyBinding(loadRequest, out var bindingName, out var bindingInfo))
+                dataMapper = new HttpDataMapper(bindingName, bindingInfo);
             if (dataMapper == null)continue;
             _dataMappers.Add(loadRequest.FunctionId, dataMapper);
 
