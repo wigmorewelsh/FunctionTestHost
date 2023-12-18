@@ -61,7 +61,6 @@ internal class MetadataClientRpc<TStartup> : IHostedService
                     Direction = Direction(binding),
                     Type = binding["Type"] as string,
                     DataType = DataType(binding),
-                    Cardinality = Cardinality(binding),
                     Properties = { map }
                 };
             }
@@ -75,7 +74,7 @@ internal class MetadataClientRpc<TStartup> : IHostedService
                     EntryPoint = sdkFunctionMetadata.EntryPoint,
                     IsProxy = false,
                     ScriptFile = sdkFunctionMetadata.ScriptFile,
-                    Bindings = { bindingInfos }
+                    Bindings = { bindingInfos },
                 },
                 ManagedDependencyEnabled = false
             });
@@ -104,21 +103,6 @@ internal class MetadataClientRpc<TStartup> : IHostedService
         }
 
         return BindingInfo.Types.Direction.In;
-    }
-
-    private static BindingInfo.Types.Cardinality Cardinality(IDictionary<string, object> binding)
-    {
-        if (binding.TryGetValue("Cardinality", out var cardinality))
-        {
-            return cardinality switch
-            {
-                "Many" => BindingInfo.Types.Cardinality.Many,
-                "One" => BindingInfo.Types.Cardinality.One,
-                _ => BindingInfo.Types.Cardinality.Unknown
-            };
-        }
-
-        return BindingInfo.Types.Cardinality.Unknown;
     }
 
     private static BindingInfo.Types.DataType DataType(IDictionary<string, object> binding)
