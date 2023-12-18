@@ -21,7 +21,7 @@ public class ServiceBusDataMapperFactory : IDataMapperFactory
         DataMapper? dataMapper = null;
         if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
         {
-            var isBatch = servicebusBinding.Cardinality == BindingInfo.Types.Cardinality.Many;
+            var isBatch = servicebusBinding.IsMany();
             // this is horrible
             var queueName = servicebusBinding.Properties["queueName"]; 
 

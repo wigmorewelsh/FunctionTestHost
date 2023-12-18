@@ -14,7 +14,7 @@ public class HttpDataMapper : DataMapper
 
     public override TypedData ToTypedData(string functionId, RpcHttp body)
     {
-        if (_bindingInfo.DataType == BindingInfo.Types.DataType.Binary && _bindingInfo.Cardinality != BindingInfo.Types.Cardinality.Many)
+        if (_bindingInfo.DataType == BindingInfo.Types.DataType.Binary && !_bindingInfo.IsMany())
         {
             if (body.Body.Bytes is { } bytes)
             {
@@ -24,7 +24,7 @@ public class HttpDataMapper : DataMapper
                 };  
             } 
         }
-        if (_bindingInfo.DataType == BindingInfo.Types.DataType.Binary && _bindingInfo.Cardinality == BindingInfo.Types.Cardinality.Many)
+        if (_bindingInfo.DataType == BindingInfo.Types.DataType.Binary && _bindingInfo.IsMany())
         {
             if (body.Body.Bytes is { } bytes)
             {
