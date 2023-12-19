@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <AzureFunctionsVersion>V4</AzureFunctionsVersion>
+        <OutputType>Exe</OutputType>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>FunctionAppOne</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" VersionOverride="3.1.0" />
+        <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" VersionOverride="5.15.0"  />
+        <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" VersionOverride="1.16.4"  />
+        <PackageReference Include="Microsoft.Azure.Functions.Worker" VersionOverride="1.20.0"  />
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="host.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="local.settings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+        </None>
+    </ItemGroup>
+</Project>

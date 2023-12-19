@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using Orleans;
@@ -14,14 +15,15 @@ public class HttpDataMapperFactory : IDataMapperFactory
         _grainFactory = grainFactory;
     }
 
-    public virtual async Task<DataMapper?> TryCreateDataMapper(FunctionLoadRequest loadRequest, IAddressable functionInstance)
+    public virtual async Task<DataMapper?> TryCreateDataMapper(RpcFunctionMetadata loadRequest,
+        IAddressable functionInstance)
     {
         DataMapper? dataMapper = null;
 
         // TODO: extract this into external class and config
         if (TryGetHttpBinding(loadRequest, out var paramName, out var bindingInfo))
         {
-            var endpointGrain = _grainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Metadata.Name);
+            var endpointGrain = _grainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Name);
             await endpointGrain.Add(loadRequest.FunctionId, GrainExtensions.AsReference<IFunctionInstanceGrain>(functionInstance));
             dataMapper = new HttpDataMapper(paramName, bindingInfo);
         }
@@ -29,11 +31,11 @@ public class HttpDataMapperFactory : IDataMapperFactory
         return dataMapper;
     }
 
-    private bool TryGetHttpBinding(FunctionLoadRequest loadRequest, out string bindingName, out BindingInfo bindingInfo)
+    private bool TryGetHttpBinding(RpcFunctionMetadata loadRequest, out string bindingName, out BindingInfo bindingInfo)
     {
-        foreach (var (key, value) in loadRequest.Metadata.Bindings)
+        foreach (var (key, value) in loadRequest.Bindings)
         {
-            if (value.Type == "HttpTrigger")
+            if (value.Type.Equals("HttpTrigger", StringComparison.InvariantCultureIgnoreCase))
             {
                 bindingName = key;
                 bindingInfo = value;
