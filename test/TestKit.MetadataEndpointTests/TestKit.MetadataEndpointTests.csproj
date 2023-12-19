@@ -22,7 +22,6 @@
         </PackageReference>
         <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" VersionOverride="3.1.0" />
         <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" VersionOverride="5.15.0"  />
-        <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" VersionOverride="1.16.4"  />
         <PackageReference Include="Microsoft.Azure.Functions.Worker" VersionOverride="1.20.0"  />
         <PackageReference Include="Azure.Messaging.ServiceBus" VersionOverride="7.17.0" />
     </ItemGroup>
