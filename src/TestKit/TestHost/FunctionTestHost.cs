@@ -121,6 +121,19 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         foreach (var functionHost in _functionHosts) await functionHost.Start();
     }
 
+    private class StartupSubscriber : IStatusSubscriber
+    {
+        private TaskCompletionSource _tcs = new();
+        
+        public Task Notify()
+        {
+            _tcs.TrySetResult();
+            return Task.CompletedTask;
+        }
+        
+        public Task Wait() => _tcs.Task;
+    }
+    
     public async Task CreateServer()
     {
         if (_isInit) return;
@@ -134,6 +147,14 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         ConfigureTestHost(this);        
 
         await StartFunctions();
+
+        var observer = new StartupSubscriber();
+        var grainFactory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
+        var observerRef = await grainFactory.CreateObjectReference<IStatusSubscriber>(observer);
+        var registory = grainFactory.GetGrain<IFunctionRegistoryGrain>(0);
+        await registory.AddObserver(observerRef);
+        
+        await observer.Wait();
 
         _isInit = true;
     }
