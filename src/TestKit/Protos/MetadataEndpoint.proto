@@ -16,10 +16,13 @@ message StreamingMessage {
   string request_id = 1;
   string worker_id = 2;
 
+  reserved 10;
+  
   // Payload of the message
   oneof content {
-    FunctionInit function_init = 10;
-
+    AzureFunctionsRpcMessages.StartStream start_stream = 3;
+    AzureFunctionsRpcMessages.FunctionsMetadataRequest functions_metadata_request = 29;
+    AzureFunctionsRpcMessages.FunctionMetadataResponse function_metadata_response = 30;
   }
 }
 

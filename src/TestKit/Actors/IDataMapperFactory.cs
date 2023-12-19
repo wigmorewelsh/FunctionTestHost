@@ -6,5 +6,5 @@ namespace TestKit.Actors;
 
 public interface IDataMapperFactory
 {
-    Task<DataMapper?> TryCreateDataMapper(FunctionLoadRequest loadRequest, IAddressable functionInstance);
+    Task<DataMapper?> TryCreateDataMapper(RpcFunctionMetadata loadRequest, IAddressable functionInstance);
 }

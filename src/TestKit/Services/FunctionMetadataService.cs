@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 using FunctionMetadataEndpoint;
 using Grpc.Core;
@@ -17,10 +19,28 @@ internal class FunctionMetadataService : FunctionRpc.FunctionRpcBase
         
     public override async Task EventStream(IAsyncStreamReader<StreamingMessage> requestStream, IServerStreamWriter<StreamingMessage> responseStream, ServerCallContext context)
     {
-        await foreach (var message in requestStream.ReadAllAsync(context.CancellationToken))
+        var (workerId, grain) = await SetupFunctionGrain(requestStream, context.CancellationToken);
+        
+        var observer = new FunctionMetadataObserver(requestStream, responseStream, grain);
+        var observerRef = await _grainFactory.CreateObjectReference<IFunctionObserver>(observer);
+        
+        await grain.Subscribe(observerRef);
+        
+        await observer.ForwardToGrain(context.CancellationToken);
+    }
+    
+    private async Task<(string, IFunctionInstanceGrain)> SetupFunctionGrain(
+        IAsyncStreamReader<StreamingMessage> requestStream, CancellationToken contextCancellationToken)
+    {
+        if (await requestStream.MoveNext(contextCancellationToken))
         {
-            var grain = _grainFactory.GetGrain<IFunctionInstanceGrain>(message.WorkerId);
-            await grain.InitMetadata(message);
+            var nextMessage = requestStream.Current;
+            if (nextMessage.StartStream is { } initRequest)
+            {
+                return (initRequest.WorkerId, _grainFactory.GetGrain<IFunctionInstanceGrain>(initRequest.WorkerId));
+            }
         }
+
+        throw new Exception("Expected StartStream message");
     }
 }

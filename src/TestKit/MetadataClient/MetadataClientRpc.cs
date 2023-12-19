@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using FunctionMetadataEndpoint;
 using Google.Protobuf.Collections;
+using Grpc.Core;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using TestKit.Metadata;
@@ -25,7 +27,7 @@ internal class GrpcWorkerStartupOptions
     public int GrpcMaxMessageLength { get; set; }
 }
 
-internal class MetadataClientRpc<TStartup> : IHostedService
+internal class MetadataClientRpc<TStartup> : BackgroundService 
 {
     private readonly FunctionRpc.FunctionRpcClient _client;
     private readonly IOptions<GrpcWorkerStartupOptions> _options;
@@ -37,12 +39,32 @@ internal class MetadataClientRpc<TStartup> : IHostedService
         _options = options;
     }
 
-    public async Task UpdateMetadata()
+    public async Task UpdateMetadata(CancellationToken stoppingToken)
+    {
+        var stream = _client.EventStream();
+        await stream.RequestStream.WriteAsync(new StreamingMessage
+        {
+            StartStream = new StartStream
+            {
+                WorkerId = _options.Value.WorkerId,
+            }
+        });
+
+        await foreach (var message in stream.ResponseStream.ReadAllAsync(stoppingToken))
+        {
+            if (message.FunctionsMetadataRequest is { } metadataRequest)
+            {
+                await LoadFunctionMetadata(stream.RequestStream);
+            }
+        }
+    }
+
+    private async Task LoadFunctionMetadata(IClientStreamWriter<StreamingMessage> streamRequestStream)
     {
         var metadata =
             new FunctionMetadataGenerator()
                 .GenerateFunctionMetadataWithReferences(typeof(TStartup).Assembly);
-        var functionLoadRequests = new List<FunctionLoadRequest>();
+        var functionLoadRequests = new List<RpcFunctionMetadata>();
         foreach (var sdkFunctionMetadata in metadata)
         {
             var bindingInfos = new Dictionary<string, BindingInfo>();
@@ -56,6 +78,7 @@ internal class MetadataClientRpc<TStartup> : IHostedService
                         map.Add(key, str);
                     }
                 }
+
                 bindingInfos[binding["Name"] as string] = new BindingInfo
                 {
                     Direction = Direction(binding),
@@ -64,28 +87,27 @@ internal class MetadataClientRpc<TStartup> : IHostedService
                     Properties = { map }
                 };
             }
-            functionLoadRequests.Add(new FunctionLoadRequest
+
+            functionLoadRequests.Add(new RpcFunctionMetadata
             {
                 FunctionId = sdkFunctionMetadata.Name,
-                Metadata = new RpcFunctionMetadata
-                {
-                    Name = sdkFunctionMetadata.Name,
-                    // Directory = sdkFunctionMetadata.FunctionDirectory,
-                    EntryPoint = sdkFunctionMetadata.EntryPoint,
-                    IsProxy = false,
-                    ScriptFile = sdkFunctionMetadata.ScriptFile,
-                    Bindings = { bindingInfos },
-                },
+                Name = sdkFunctionMetadata.Name,
+                // Directory = sdkFunctionMetadata.FunctionDirectory,
+                EntryPoint = sdkFunctionMetadata.EntryPoint,
+                IsProxy = false,
+                ScriptFile = sdkFunctionMetadata.ScriptFile,
+                Bindings = { bindingInfos },
                 ManagedDependencyEnabled = false
             });
         }
 
-        await _client.EventStream().RequestStream.WriteAsync(new StreamingMessage
+        await streamRequestStream.WriteAsync(new StreamingMessage
         {
             WorkerId = _options.Value.WorkerId,
-            FunctionInit = new FunctionInit
+            FunctionMetadataResponse = new FunctionMetadataResponse()
             {
-                FunctionLoadRequestsResults = { functionLoadRequests }
+                Result = new StatusResult() { Status = StatusResult.Types.Status.Success },
+                FunctionMetadataResults = { functionLoadRequests }
             }
         });
     }
@@ -121,13 +143,8 @@ internal class MetadataClientRpc<TStartup> : IHostedService
         return BindingInfo.Types.DataType.Undefined;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await UpdateMetadata();
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
+        await UpdateMetadata(stoppingToken);
     }
 }

@@ -15,7 +15,7 @@ public class ServiceBusDataMapperFactory : IDataMapperFactory
         _grainFactory = grainFactory;
     }
 
-    public virtual async Task<DataMapper?> TryCreateDataMapper(FunctionLoadRequest loadRequest,
+    public virtual async Task<DataMapper?> TryCreateDataMapper(RpcFunctionMetadata loadRequest,
         IAddressable functionInstance)
     {
         DataMapper? dataMapper = null;
@@ -32,12 +32,12 @@ public class ServiceBusDataMapperFactory : IDataMapperFactory
         return dataMapper;
     }
 
-    private bool TryGetServiceBusBinding(FunctionLoadRequest loadRequest, out string bindingName,
+    private bool TryGetServiceBusBinding(RpcFunctionMetadata loadRequest, out string bindingName,
         out BindingInfo bindingInfo)
     {
-        foreach (var (key, value) in loadRequest.Metadata.Bindings)
+        foreach (var (key, value) in loadRequest.Bindings)
         {
-            if (value.Type == "ServiceBusTrigger")
+            if (value.Type.Equals("ServiceBusTrigger", StringComparison.InvariantCultureIgnoreCase))
             {
                 bindingName = key;
                 bindingInfo = value;

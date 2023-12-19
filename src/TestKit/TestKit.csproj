@@ -26,6 +26,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Stateless" />
         <PackageReference Include="xunit.abstractions" />
         <PackageReference Include="xunit.extensibility.core" />
         <PackageReference Include="System.Reflection.MetadataLoadContext" />

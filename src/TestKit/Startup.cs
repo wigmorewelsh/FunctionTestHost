@@ -19,9 +19,6 @@ public class Startup
     // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton<LocalGrainActivator>();
-        services.AddSingleton<IGrainActivator>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
-        services.AddSingleton<ILocalGrainCatalog>(ctx => ctx.GetRequiredService<LocalGrainActivator>());
         services.AddTransient<IDataMapperFactory, HttpDataMapperFactory>();
         services.AddGrpc();
     }

@@ -9,16 +9,14 @@ using TestKit.Actors;
 
 namespace TestKit.Services;
 
-internal class FunctionRpcService : FunctionRpc.FunctionRpcBase
+internal partial class FunctionRpcService : FunctionRpc.FunctionRpcBase
 {
     private readonly IGrainFactory _grainFactory;
-    private readonly ILocalGrainCatalog _localGrainCatalog;
     private readonly ILogger<FunctionRpcService> _logger;
 
-    public FunctionRpcService(IGrainFactory grainFactory, ILocalGrainCatalog localGrainCatalog, ILogger<FunctionRpcService> logger)
+    public FunctionRpcService(IGrainFactory grainFactory, ILogger<FunctionRpcService> logger)
     {
         _grainFactory = grainFactory;
-        _localGrainCatalog = localGrainCatalog;
         _logger = logger;
     }
 
@@ -26,52 +24,13 @@ internal class FunctionRpcService : FunctionRpc.FunctionRpcBase
         IServerStreamWriter<StreamingMessage> responseStream, ServerCallContext context)
     {
         var (workerId, functionGrain) = await SetupFunctionGrain(requestStream, context.CancellationToken);
-
-        await functionGrain.Init();
-        var localGrain = _localGrainCatalog.GetGrain(functionGrain.GetGrainIdentity());
-        localGrain.SetResponseStream(responseStream);
-
-        var response = await WaitTillInit(requestStream, context.CancellationToken);
-
-        // localGrain.SetRequestStream(responseStream); ??
-        await functionGrain.SetReady();
-
-        await StartReading(requestStream, functionGrain, context.CancellationToken);
-        // await localGrain.DeactivationTask(context.CancellationToken); ??
-    }
-
-    private async Task StartReading(IAsyncStreamReader<StreamingMessage> requestStream,
-        IFunctionInstanceGrain functionInstanceGrain,
-        CancellationToken contextCancellationToken)
-    {
-        while (await requestStream.MoveNext(contextCancellationToken))
-        {
-            var dd = requestStream.Current;
-            if (dd.InvocationResponse is { } response)
-            {
-                await functionInstanceGrain.Response(response);
-            }
-        }
-    }
-
-    private async Task<FunctionLoadResponse> WaitTillInit(IAsyncStreamReader<StreamingMessage> requestStream,
-        CancellationToken contextCancellationToken)
-    {
-        while (await requestStream.MoveNext(contextCancellationToken))
-        {
-            var nextMessage = requestStream.Current;
-            if (nextMessage.FunctionLoadResponse is { } initRequest)
-            {
-                return initRequest;
-            }
-
-            if (nextMessage.RpcLog is { } rpcLog)
-            {
-                _logger.LogInformation(rpcLog.Message);
-            }
-        }
-
-        throw new Exception("Expected StartStream message");
+        
+        var observer = new FunctionRpcObserver(requestStream, responseStream, functionGrain);
+        var observerRef = await _grainFactory.CreateObjectReference<IFunctionObserver>(observer);
+        
+        await functionGrain.Subscribe(observerRef);
+       
+        await observer.ForwardToGrain(context.CancellationToken); 
     }
 
     private async Task<(string, IFunctionInstanceGrain)> SetupFunctionGrain(
