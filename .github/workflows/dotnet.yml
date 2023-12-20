@@ -43,10 +43,6 @@ jobs:
         with:
           tag_name: ${{ steps.gitversion.outputs.semVer }}
           release_name: Release ${{ steps.gitversion.outputs.semVer }}
-          body: |
-            Changes in this Release
-            - First Change
-            - Second Change
           draft: false
           prerelease: false
       - name: Publish github
