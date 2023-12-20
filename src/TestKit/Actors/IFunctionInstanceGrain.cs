@@ -12,4 +12,5 @@ public interface IFunctionInstanceGrain : IGrainWithStringKey
     Task<AzureFunctionsRpcMessages.InvocationResponse> Request(string functionId, AzureFunctionsRpcMessages.TypedData typedData);
     Task Subscribe(IFunctionObserver observerRef);
     Task Recieve(AzureFunctionsRpcMessages.StreamingMessage message);
+    Task Ping();
 }
