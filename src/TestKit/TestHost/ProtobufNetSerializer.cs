@@ -1,3 +1,5 @@
+#if NET6_0
+
 using System;
 using System.IO;
 using Google.Protobuf;
@@ -79,3 +81,4 @@ public class ProtobufNetSerializer : IExternalSerializer
         return message;
     }
 }
+#endif

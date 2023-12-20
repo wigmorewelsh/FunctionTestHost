@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Serialization;
 using TestKit.Actors;
 using TestKit.Utils;
 using Xunit;
@@ -76,13 +77,19 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         _host = Host.CreateDefaultBuilder()
             .UseOrleans(orleans =>
             {
+#if NET6_0
                 orleans.Configure<SerializationProviderOptions>(opt =>
                 {
                     opt.SerializationProviders.Add(typeof(ProtobufNetSerializer));
                 });
+#else
+                orleans.Services.AddSerializer(s => s.AddProtobufSerializer());
+#endif
                 orleans.UseLocalhostClustering(ports.Item1, ports.Item2);
+#if NET6_0
                 orleans.ConfigureApplicationParts(parts =>
                     parts.AddApplicationPart(typeof(FunctionInstanceGrain).Assembly));
+#endif
                 foreach (Action<ISiloBuilder> hostConfig in _hostConfigs)
                 {
                     hostConfig.Invoke(orleans);
@@ -152,7 +159,11 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
 
         var observer = new StartupSubscriber();
         var grainFactory = _host.Services.GetRequiredService<IGrainFactory>();
+#if NET6_0
         var observerRef = await grainFactory.CreateObjectReference<IStatusSubscriber>(observer);
+#else 
+        var observerRef = grainFactory.CreateObjectReference<IStatusSubscriber>(observer);
+#endif
         var registory = grainFactory.GetGrain<IFunctionRegistoryGrain>(0);
         await registory.AddObserver(observerRef);
         

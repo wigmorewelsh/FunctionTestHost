@@ -22,7 +22,11 @@ internal class FunctionMetadataService : FunctionRpc.FunctionRpcBase
         var (workerId, grain) = await SetupFunctionGrain(requestStream, context.CancellationToken);
         
         var observer = new FunctionMetadataObserver(requestStream, responseStream, grain);
+#if NET6_0
         var observerRef = await _grainFactory.CreateObjectReference<IFunctionObserver>(observer);
+#else 
+        var observerRef = _grainFactory.CreateObjectReference<IFunctionObserver>(observer);
+#endif
         
         await grain.Subscribe(observerRef);
         

@@ -14,7 +14,9 @@ public static class FunctionTestHostExtensions
     {
         testHost.ConfigureHost(orleans =>
         {
+#if NET6_0
             orleans.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(ServiceBusQueueGrain).Assembly));
+#endif
         });
     }
 

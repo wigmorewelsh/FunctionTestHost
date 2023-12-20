@@ -9,7 +9,9 @@ using Orleans.Runtime;
 using TestKit.Actors;
 using TestKit.Services;
 
+#if NET6_0
 [assembly: KnownType(typeof(InvocationResponse))]
+#endif
 
 namespace TestKit;
 
