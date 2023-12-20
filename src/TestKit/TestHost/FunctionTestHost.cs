@@ -27,7 +27,7 @@ public interface IFunctionTestHostBuilder
 
 public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsyncLifetime
 {
-    private protected IHost _fakeHost;
+    private protected IHost _host;
     private protected List<FunctionTestApp> _functionHosts = new();
     private protected List<Action<IServiceCollection>> _hostExtensions = new();
     private protected volatile bool _isDisposed;
@@ -48,7 +48,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         if (_isDisposed) return;
 
         foreach (var functionHost in _functionHosts) await functionHost.DisposeAsync();
-        await _fakeHost.StopAsync(TimeSpan.FromMilliseconds(0));
+        await _host.StopAsync(TimeSpan.FromMilliseconds(0));
         _isDisposed = true;
     }
 
@@ -73,7 +73,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
 
     private protected async Task StartHost((int, int) ports)
     {
-        _fakeHost = Host.CreateDefaultBuilder()
+        _host = Host.CreateDefaultBuilder()
             .UseOrleans(orleans =>
             {
                 orleans.Configure<SerializationProviderOptions>(opt =>
@@ -101,7 +101,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
             })
             .Build();
 
-        await _fakeHost.StartAsync();
+        await _host.StartAsync();
     }
 
     protected virtual void ConfigureTestHost(IFunctionTestHostBuilder builder) { }
@@ -118,7 +118,9 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     
     private protected async Task StartFunctions()
     {
-        foreach (var functionHost in _functionHosts) await functionHost.Start();
+        var grainFactory = _host.Services.GetRequiredService<IGrainFactory>();
+        foreach (var functionHost in _functionHosts) 
+            await functionHost.Start(grainFactory);
     }
 
     private class StartupSubscriber : IStatusSubscriber
@@ -149,7 +151,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         await StartFunctions();
 
         var observer = new StartupSubscriber();
-        var grainFactory = _fakeHost.Services.GetRequiredService<IGrainFactory>();
+        var grainFactory = _host.Services.GetRequiredService<IGrainFactory>();
         var observerRef = await grainFactory.CreateObjectReference<IStatusSubscriber>(observer);
         var registory = grainFactory.GetGrain<IFunctionRegistoryGrain>(0);
         await registory.AddObserver(observerRef);
@@ -172,7 +174,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     public async Task<IServiceProvider> CreateHostServiceProvider()
     {
         await CreateServer();
-        return _fakeHost.Services;
+        return _host.Services;
     }
 
     public async Task<string> CallFunction(string functionName, byte[]? getBytes)

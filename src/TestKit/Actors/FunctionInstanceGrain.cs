@@ -162,9 +162,6 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         }
     }
 
-
-
-
     public async Task InitMetadata(AzureFunctionsRpcMessages.FunctionMetadataResponse message)
     {
         foreach (var loadRequest in message.FunctionMetadataResults)
@@ -307,6 +304,11 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             _stateMachine.FireAsync(TriggerEnum.LoadedFunctions).Ignore();
         }
 
+        return Task.CompletedTask;
+    }
+
+    public Task Ping()
+    {
         return Task.CompletedTask;
     }
 

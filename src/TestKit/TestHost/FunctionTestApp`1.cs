@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Orleans;
+using TestKit.Actors;
 using TestKit.MetadataClient;
 using TestKit.Utils;
 
@@ -30,12 +32,14 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
         _functionTestHost = functionTestHost;
     }
 
-    public async Task Start()
+    public async Task Start(IGrainFactory grainFactory)
     {
         if(_isInit) return;
         using var _ = await _lock.LockAsync();
         if(_isInit) return;
 
+        var workerid = Guid.NewGuid().ToString();
+        
         var builder = HostFactoryResolver.ResolveHostBuilderFactory<IHostBuilder>(typeof(TStartup).Assembly);
         var configureServices = builder(Array.Empty<string>())
             .ConfigureAppConfiguration(config =>
@@ -44,7 +48,7 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
                 {
                     ["Host"] = "localhost",
                     ["Port"] = _functionTestHost.HostPorts.Item1.ToString(),
-                    ["WorkerId"] = Guid.NewGuid().ToString(),
+                    ["WorkerId"] = workerid,
                     ["GrpcMaxMessageLength"] = (2_147_483_647).ToString()
                 });
             })
@@ -73,6 +77,10 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
             .Build();
 
         await _functionHost.StartAsync();
+
+        var functionGrain = grainFactory.GetGrain<IFunctionInstanceGrain>(workerid);
+        await functionGrain.Ping();
+        
         _isInit = true;
     }
 

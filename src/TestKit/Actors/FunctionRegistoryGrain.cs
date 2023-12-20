@@ -30,7 +30,7 @@ public class FunctionRegistoryGrain : Grain, IFunctionRegistoryGrain
 
     private async Task TryNotifyObservers()
     {
-        if (_functions.Any() && _functions.All(x => x.Value == Status.Loaded))
+        if (_functions.All(x => x.Value == Status.Loaded))
         {
             foreach (var observer in _observers)
             {
@@ -39,10 +39,10 @@ public class FunctionRegistoryGrain : Grain, IFunctionRegistoryGrain
         }
     }
 
-    public Task AddObserver(IStatusSubscriber observer)
+    public async Task AddObserver(IStatusSubscriber observer)
     {
         _observers.Add(observer);
-        return Task.CompletedTask;
+        await TryNotifyObservers();
     }
 }
 
