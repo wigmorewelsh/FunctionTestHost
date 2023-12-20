@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <LangVersion>preview</LangVersion>
 
@@ -22,10 +22,11 @@
         </PackageReference>
         <PackageReference Include="Grpc.AspNetCore" />
         <PackageReference Include="Microsoft.Orleans.Server" />
-        <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild">
+        <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Condition="'$(TargetFramework)' == 'net6.0'">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Orleans.Serialization.Protobuf" Condition="'$(TargetFramework)' == 'net7.0'" />
         <PackageReference Include="Stateless" />
         <PackageReference Include="xunit.abstractions" />
         <PackageReference Include="xunit.extensibility.core" />

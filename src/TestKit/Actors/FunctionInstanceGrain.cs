@@ -110,6 +110,7 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             .Permit(TriggerEnum.LoadedFunctions, StateEnum.Ready)
             .Ignore(TriggerEnum.InvocationRequest)
             .Ignore(TriggerEnum.InvocationResponse)
+            .Ignore(TriggerEnum.LoadedMetadata)
             .OnEntryAsync(() => this.LoadFunctions())
             .OnExitAsync(() => this.SetReady());
 
@@ -132,13 +133,22 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         await registry.UpdateFunction(this.GetPrimaryKeyString());
     }
 
+
+#if NET6_0
     public async override Task OnActivateAsync()
+#else
+    public async override Task OnActivateAsync(CancellationToken cancellationToken)
+#endif
     {
         var registry = GrainFactory.GetGrain<IFunctionRegistoryGrain>(0);
         await registry.RegisterFunction(this.GetPrimaryKeyString());
     }
-    
+ 
+#if NET6_0
     public override Task OnDeactivateAsync()
+#else
+    public override Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
+#endif
     {
         foreach (var pendingRequestsValue in _invocationRequests)
         {
@@ -150,6 +160,7 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
     private async Task ProcessMessage()
     {
+        if (!_stateMachine.IsInState(StateEnum.Ready)) return;
         if (_invocationRequests.Any())
         {
             var invocationRequest = _invocationRequests.First();
@@ -173,7 +184,7 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             if (dataMapper == null && TryGetAnyBinding(loadRequest, out var bindingName, out var bindingInfo))
                 dataMapper = new HttpDataMapper(bindingName, bindingInfo);
             if (dataMapper == null) continue;
-            _dataMappers.Add(loadRequest.FunctionId, dataMapper);
+            _dataMappers[loadRequest.FunctionId] = dataMapper;
 
             //named function endpoints for multi function hosting
             var functionName = Path.GetFileNameWithoutExtension(loadRequest.ScriptFile);
