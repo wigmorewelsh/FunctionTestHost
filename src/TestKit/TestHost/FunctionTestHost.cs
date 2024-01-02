@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
@@ -75,6 +76,10 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     private protected async Task StartHost((int, int) ports)
     {
         _host = Host.CreateDefaultBuilder()
+            .ConfigureLogging(logging =>
+            {
+                logging.SetMinimumLevel(LogLevel.Warning);
+            })
             .UseOrleans(orleans =>
             {
 #if NET6_0
