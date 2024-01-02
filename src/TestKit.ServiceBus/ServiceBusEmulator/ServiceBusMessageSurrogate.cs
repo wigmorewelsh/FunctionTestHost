@@ -13,7 +13,7 @@ public struct AmqpMessageWrapper
 }
 
 [RegisterConverter]
-public sealed class MyForeignLibraryValueTypeSurrogateConverter :
+public sealed class ServiceBusMessageSurrogateConverter :
     Orleans.IConverter<ServiceBusMessage, AmqpMessageWrapper>
 {
     public ServiceBusMessage ConvertFromSurrogate(in AmqpMessageWrapper surrogate)
@@ -25,7 +25,7 @@ public sealed class MyForeignLibraryValueTypeSurrogateConverter :
 
     public AmqpMessageWrapper ConvertToSurrogate(in ServiceBusMessage value)
     {
-        AmqpAnnotatedMessage amqpAnnotatedMessage = value.GetRawAmqpMessage();
+        var amqpAnnotatedMessage = value.GetRawAmqpMessage();
         var binaryData = amqpAnnotatedMessage.ToBytes();
         return new AmqpMessageWrapper
         {
