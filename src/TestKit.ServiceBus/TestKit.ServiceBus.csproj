@@ -7,7 +7,7 @@
     <PackageId>FunctionTestHost.ServiceBus</PackageId>
     <PackageDescription>Host for integration testing Azure Isolated Functions</PackageDescription>
     <RepositoryUrl>https://github.com/wigmorewelsh/FunctionTestHost</RepositoryUrl>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
