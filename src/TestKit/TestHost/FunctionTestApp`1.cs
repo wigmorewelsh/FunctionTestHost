@@ -97,11 +97,16 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
     {
         try
         {
+            bool Predicate(Type t)
+            {
+                return t.GetInterfaces().Any(i => i.FullName == "Microsoft.Azure.Functions.Worker.IAutoConfigureStartup") 
+                       && !t.IsInterface && !t.IsAbstract;
+            }
+
             var autoConfigureStartupTypes = typeof(TStartup).Assembly 
                 .GetTypes()
-                .Where(t => t.GetInterfaces().Any(i => i.FullName == "Microsoft.Azure.Functions.Worker.IAutoConfigureStartup") &&
-                            !t.IsInterface && !t.IsAbstract);
-
+                .Where(Predicate);
+            
             foreach (var type in autoConfigureStartupTypes)
             {
                 dynamic instance = Activator.CreateInstance(type)!;
@@ -115,6 +120,11 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
             Console.WriteLine(e);
         }
 
+        if (typeof(TStartup).Assembly.GetTypes().Any(t => t.GetInterfaces().Any(i =>
+                i.FullName == "Microsoft.Azure.Functions.Worker.Core.FunctionMetadata.IFunctionMetadataProvider")))
+        {
+            return true;
+        }
         return false;
     }
     
