@@ -4,7 +4,9 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.13.1" />
+    <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.13.1" Condition="'$(TargetFramework)'=='net6.0'" />
+    <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.13.1" Condition="'$(TargetFramework)'=='net7.0'" />
+    <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.17.0" Condition="'$(TargetFramework)'=='net8.0'" />
     <PackageVersion Include="GitVersion.MsBuild" Version="5.12.0" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.52.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.2" />
