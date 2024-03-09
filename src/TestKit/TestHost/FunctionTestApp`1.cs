@@ -113,7 +113,10 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
                 instance.Configure(builder);
             }
 
-            return autoConfigureStartupTypes.Any();
+            if (!autoConfigureStartupTypes.Any())
+            {
+                return false;
+            }
         } 
         catch (Exception e)
         {
