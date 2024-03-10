@@ -23,6 +23,7 @@ public class ServiceBusTriggerAdminTests : IClassFixture<FunctionTestCallbackHos
         _testCallbackHost.ExecutionCallback.ClearReceivedCalls();
 
         var response = await _testCallbackHost.CallFunction("admin/SimpleServiceBusCall");
+        await Task.Delay(500);
         _testCallbackHost.ExecutionCallback.Received().Called();
     }
 
@@ -32,6 +33,7 @@ public class ServiceBusTriggerAdminTests : IClassFixture<FunctionTestCallbackHos
         _testCallbackHost.ExecutionCallback.ClearReceivedCalls();
 
         var response = await _testCallbackHost.CallFunction("admin/SimpleServiceBusCall", Encoding.UTF8.GetBytes("bar"));
+        await Task.Delay(500);
         _testCallbackHost.ExecutionCallback.Received().Called();
     }
 
@@ -41,6 +43,7 @@ public class ServiceBusTriggerAdminTests : IClassFixture<FunctionTestCallbackHos
         _testCallbackHost.ExecutionCallback.ClearReceivedCalls();
 
         var response = await _testCallbackHost.CallFunction("admin/BatchServiceBusCall", Encoding.UTF8.GetBytes("bar"));
+        await Task.Delay(500);
         _testCallbackHost.ExecutionCallback.Received().Called();
     }
 }
