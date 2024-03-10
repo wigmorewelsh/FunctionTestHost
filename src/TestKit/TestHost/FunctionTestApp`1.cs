@@ -135,7 +135,11 @@ public class FunctionTestApp<TStartup> : FunctionTestApp, ITestHostBuilder
 
     public async ValueTask DisposeAsync()
     {
-        await _functionHost.StopAsync(TimeSpan.Zero);
+        try
+        {
+            await _functionHost.StopAsync(TimeSpan.Zero);
+        } 
+        catch (TaskCanceledException) {}
     }
 
     public ITestHostBuilder WithServiceConfiguration(Action<IHostBuilder> action)
