@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using TestKit.Metadata;
 using FunctionRpc = FunctionMetadataEndpoint.FunctionRpc;
+using RpcException = Grpc.Core.RpcException;
 using StreamingMessage = FunctionMetadataEndpoint.StreamingMessage;
 
 namespace TestKit.MetadataClient;
@@ -50,13 +51,17 @@ internal class MetadataClientRpc<TStartup> : BackgroundService
             }
         });
 
-        await foreach (var message in stream.ResponseStream.ReadAllAsync(stoppingToken))
+        try
         {
-            if (message.FunctionsMetadataRequest is { } metadataRequest)
+            await foreach (var message in stream.ResponseStream.ReadAllAsync(stoppingToken))
             {
-                await LoadFunctionMetadata(stream.RequestStream);
+                if (message.FunctionsMetadataRequest is { } metadataRequest)
+                {
+                    await LoadFunctionMetadata(stream.RequestStream);
+                }
             }
-        }
+        } 
+        catch (RpcException e) when(e.StatusCode is StatusCode.Cancelled){}
     }
 
     private async Task LoadFunctionMetadata(IClientStreamWriter<StreamingMessage> streamRequestStream)
