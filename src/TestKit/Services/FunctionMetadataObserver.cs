@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FunctionMetadataEndpoint;
@@ -49,9 +50,17 @@ internal class FunctionMetadataObserver : IFunctionObserver
 
     public async Task ForwardToGrain(CancellationToken cancellationToken = default)
     {
-        await foreach(var message in _requestStream.ReadAllAsync())
+        try
         {
-            await _functionGrain.Recieve(ConvertToMessage(message));
+            await foreach (var message in _requestStream.ReadAllAsync(cancellationToken))
+            {
+                await _functionGrain.Recieve(ConvertToMessage(message));
+            }
+        }
+        catch (OperationCanceledException) {}
+        catch (System.IO.IOException e)
+        {
+            // Stream closed
         }
     }
 
