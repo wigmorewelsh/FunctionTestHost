@@ -28,9 +28,15 @@ internal class FunctionRpcObserver : IFunctionObserver
 
     public async Task ForwardToGrain(CancellationToken cancellationToken = default)
     {
-        await foreach(var message in _requestStream.ReadAllAsync())
+        try
         {
-            await _functionGrain.Recieve(message);
+            await foreach (var message in _requestStream.ReadAllAsync(cancellationToken))
+            {
+                await _functionGrain.Recieve(message);
+            }
         }
+        catch (Microsoft.AspNetCore.Connections.ConnectionAbortedException) {}
+        catch (System.IO.IOException) {}
+        catch (System.OperationCanceledException) { }
     }
 }
