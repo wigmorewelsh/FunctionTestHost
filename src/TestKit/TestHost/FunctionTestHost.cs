@@ -79,6 +79,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
             .ConfigureLogging(logging =>
             {
                 logging.SetMinimumLevel(LogLevel.Warning);
+                logging.AddFilter("TestKit.Actors", LogLevel.Information);
             })
             .UseOrleans(orleans =>
             {
