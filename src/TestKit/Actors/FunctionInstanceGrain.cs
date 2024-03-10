@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Concurrency;
 using Orleans.Placement;
+using Orleans.Utilities;
 using Stateless;
 using Stateless.Graph;
 using TestKit.Services;
@@ -67,7 +68,6 @@ public class FunctionInvocationRequest
 }
 
 [PreferLocalPlacement]
-[Reentrant]
 internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 {
     private readonly IEnumerable<IDataMapperFactory> _dataMapperFactories;
@@ -77,8 +77,12 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     private readonly Dictionary<string, DataMapper> _dataMappers = new();
 
     private readonly List<FunctionInvocationRequest> _invocationRequests = new();
-    
-    private HashSet<IFunctionObserver> observers = new();
+
+#if NET6_0 
+    private HashSet<IFunctionObserver> observers;
+#else
+    private ObserverManager<IFunctionObserver> observers;
+#endif
 
     private StateMachine<StateEnum, TriggerEnum> _stateMachine = new(StateEnum.Started, FiringMode.Immediate)
         { RetainSynchronizationContext = true };
@@ -86,12 +90,17 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
     public FunctionInstanceGrain(ILogger<FunctionInstanceGrain> logger,
         IEnumerable<IDataMapperFactory> dataMapperFactories)
     {
+#if NET6_0
+        observers = new();
+#else
+        observers = new ObserverManager<IFunctionObserver>(TimeSpan.FromSeconds(60), logger);
+#endif
         _dataMapperFactories = dataMapperFactories;
 
         _stateMachine.OnTransitioned((transition) =>
         {
             logger.LogInformation(
-                $"State: {transition.Source} -> {transition.Destination} via {transition.Trigger}");
+                $"State: {transition.Source} -> {transition.Destination} via {transition.Trigger} pending: {_invocationRequests.Count} observers: {observers.Count}");
         });
 
         _stateMachine.Configure(StateEnum.Started)
@@ -121,7 +130,8 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             .OnEntryAsync(() => this.ProcessMessage());
 
         _stateMachine.Configure(StateEnum.Running)
-            .Permit(TriggerEnum.InvocationResponse, StateEnum.Ready);
+            .Permit(TriggerEnum.InvocationResponse, StateEnum.Ready)
+            ;
 
         _stateMachine.Configure(StateEnum.Sleeping)
             .Permit(TriggerEnum.InvocationRequest, StateEnum.Ready);
@@ -197,7 +207,7 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             await adminEndpointGrain.Add(loadRequest.FunctionId, this.AsReference<IFunctionInstanceGrain>());
         }
 
-        _stateMachine.FireAsync(TriggerEnum.LoadedMetadata).Ignore();
+        await _stateMachine.FireAsync(TriggerEnum.LoadedMetadata);
     }
 
     public async Task LoadFunctions()
@@ -249,7 +259,8 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             var invocationRequest = new FunctionInvocationRequest(taskId, streamingMessage);
             _invocationRequests.Add(invocationRequest);
 
-            _stateMachine.FireAsync(TriggerEnum.InvocationRequest).Ignore();
+            if(_stateMachine.CanFire(TriggerEnum.InvocationRequest))
+                await _stateMachine.FireAsync(TriggerEnum.InvocationRequest);
 
             return await invocationRequest.Task;
         }
@@ -287,8 +298,12 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
     public async Task Subscribe(IFunctionObserver observerRef)
     {
+#if NET6_0
         observers.Add(observerRef);
-        _stateMachine.FireAsync(TriggerEnum.ObserverAdded).Ignore();
+#else
+        observers.Subscribe(observerRef, observerRef);
+#endif
+        await _stateMachine.FireAsync(TriggerEnum.ObserverAdded);
     }
 
     public async Task FetchMetaData()
@@ -301,21 +316,20 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         });
     }
 
-    public Task Recieve(StreamingMessage message)
+    public async Task Recieve(StreamingMessage message)
     {
         if (message.FunctionMetadataResponse is { } functionMetadataResponse &&
             functionMetadataResponse.Result.Status is StatusResult.Types.Status.Success)
-            return InitMetadata(functionMetadataResponse);
+            await InitMetadata(functionMetadataResponse);
 
         if (message.InvocationResponse is { } invocationResponse)
-            return Response(invocationResponse);
+            await Response(invocationResponse);
 
         if (message.FunctionLoadResponse is { } functionLoadResponse)
         {
-            _stateMachine.FireAsync(TriggerEnum.LoadedFunctions).Ignore();
+            if (_stateMachine.CanFire(TriggerEnum.LoadedFunctions))
+                await _stateMachine.FireAsync(TriggerEnum.LoadedFunctions);
         }
-
-        return Task.CompletedTask;
     }
 
     public Task Ping()
@@ -334,7 +348,7 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             var invocationRequest = new FunctionInvocationRequest(taskId, streamingMessage);
             _invocationRequests.Add(invocationRequest);
 
-            _stateMachine.FireAsync(TriggerEnum.InvocationRequest).Ignore();
+            await _stateMachine.FireAsync(TriggerEnum.InvocationRequest);
 
             return await invocationRequest.Task;
         }
@@ -344,7 +358,7 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
     private async Task Send(StreamingMessage message)
     {
-        foreach (var observer in observers)
+        foreach (var observer in observers.ToArray())
         {
             await observer.Send(message);
         }
@@ -361,6 +375,6 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
             }
         }
 
-        _stateMachine.FireAsync(TriggerEnum.InvocationResponse).Ignore();
+        await _stateMachine.FireAsync(TriggerEnum.InvocationResponse);
     }
 }

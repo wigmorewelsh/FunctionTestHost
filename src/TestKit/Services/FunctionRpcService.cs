@@ -25,7 +25,7 @@ internal partial class FunctionRpcService : FunctionRpc.FunctionRpcBase
     {
         var (workerId, functionGrain) = await SetupFunctionGrain(requestStream, context.CancellationToken);
         
-        var observer = new FunctionRpcObserver(requestStream, responseStream, functionGrain);
+        using var observer = new FunctionRpcObserver(requestStream, responseStream, functionGrain);
 #if NET6_0
         var observerRef = await _grainFactory.CreateObjectReference<IFunctionObserver>(observer);
 #else 
