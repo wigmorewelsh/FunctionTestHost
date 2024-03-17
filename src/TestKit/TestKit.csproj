@@ -31,6 +31,8 @@
         <PackageReference Include="xunit.abstractions" />
         <PackageReference Include="xunit.extensibility.core" />
         <PackageReference Include="System.Reflection.MetadataLoadContext" />
+        <PackageReference Include="Microsoft.Azure.Functions.Worker" />
+        <PackageReference Include="Microsoft.Azure.Functions.Worker.Grpc" />
     </ItemGroup>
 
     <ItemGroup>
