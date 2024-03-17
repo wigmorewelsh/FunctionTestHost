@@ -23,9 +23,10 @@ public class HttpDataMapperFactory : IDataMapperFactory
         // TODO: extract this into external class and config
         if (TryGetHttpBinding(loadRequest, out var paramName, out var bindingInfo))
         {
+            loadRequest.TryGetRawBinding(paramName, out var rawBinding);
             var endpointGrain = _grainFactory.GetGrain<IFunctionEndpointGrain>(loadRequest.Name);
             await endpointGrain.Add(loadRequest.FunctionId, GrainExtensions.AsReference<IFunctionInstanceGrain>(functionInstance));
-            dataMapper = new HttpDataMapper(paramName, bindingInfo);
+            dataMapper = new HttpDataMapper(paramName, bindingInfo, rawBinding);
         }
 
         return dataMapper;

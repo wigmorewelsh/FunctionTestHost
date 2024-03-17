@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
@@ -73,23 +74,26 @@ internal class MetadataClientRpc<TStartup> : BackgroundService
         foreach (var sdkFunctionMetadata in metadata)
         {
             var bindingInfos = new Dictionary<string, BindingInfo>();
+            var rawBindings = new List<string>();
             foreach (IDictionary<string, object> binding in sdkFunctionMetadata.Bindings)
             {
-                var map = new MapField<string, string>();
+                var rawBinding = new Dictionary<string, string>();
                 foreach (var (key, value) in binding)
                 {
                     if (value is string str)
                     {
-                        map.Add(key, str);
+                        rawBinding[key] = str;
                     }
                 }
+                
+                rawBindings.Add(JsonSerializer.Serialize(rawBinding));
 
                 bindingInfos[binding["Name"] as string] = new BindingInfo
                 {
                     Direction = Direction(binding),
                     Type = binding["Type"] as string,
                     DataType = DataType(binding),
-                    Properties = { map }
+                    Properties = { rawBinding }
                 };
             }
 
@@ -102,7 +106,8 @@ internal class MetadataClientRpc<TStartup> : BackgroundService
                 IsProxy = false,
                 ScriptFile = sdkFunctionMetadata.ScriptFile,
                 Bindings = { bindingInfos },
-                ManagedDependencyEnabled = false
+                ManagedDependencyEnabled = false,
+                RawBindings = { rawBindings }
             });
         }
 

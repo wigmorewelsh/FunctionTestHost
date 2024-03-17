@@ -21,9 +21,11 @@ public class ServiceBusDataMapperFactory : IDataMapperFactory
         DataMapper? dataMapper = null;
         if (TryGetServiceBusBinding(loadRequest, out var paramsSbName, out var servicebusBinding))
         {
-            var isBatch = servicebusBinding.IsMany();
-            // this is horrible
-            var queueName = servicebusBinding.Properties["queueName"]; 
+            loadRequest.TryGetRawBinding(paramsSbName, out var rawBinding);
+            var isBatch = rawBinding?.IsMany() ?? false;
+            var queueName = rawBinding.TryGetValue("queueName", out var queueNameRaw) 
+                ? queueNameRaw as string 
+                : servicebusBinding.Properties["queueName"];
 
             var endpointGrain = _grainFactory.GetGrain<IServiceBusQueueGrain>(queueName);
             await endpointGrain.Subscribe(loadRequest.FunctionId, GrainExtensions.AsReference<IFunctionInstanceGrain>(functionInstance));

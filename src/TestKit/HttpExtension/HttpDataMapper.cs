@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using AzureFunctionsRpcMessages;
 
 namespace TestKit.Actors;
@@ -6,15 +7,17 @@ namespace TestKit.Actors;
 public class HttpDataMapper : DataMapper
 {
     private readonly BindingInfo _bindingInfo;
+    private readonly Dictionary<string, string>? _rawBindingInfo;
 
-    public HttpDataMapper(string bindingName, BindingInfo bindingInfo) : base(bindingName)
+    public HttpDataMapper(string bindingName, BindingInfo bindingInfo, Dictionary<string, string>? rawBindingInfo) : base(bindingName)
     {
         _bindingInfo = bindingInfo;
+        _rawBindingInfo = rawBindingInfo;
     }
 
     public override TypedData ToTypedData(string functionId, RpcHttp body)
     {
-        if (_bindingInfo.DataType == BindingInfo.Types.DataType.Binary && !_bindingInfo.IsMany())
+        if (_bindingInfo.DataType == BindingInfo.Types.DataType.Binary && !_rawBindingInfo.IsMany())
         {
             if (body.Body.Bytes is { } bytes)
             {
@@ -24,7 +27,7 @@ public class HttpDataMapper : DataMapper
                 };  
             } 
         }
-        if (_bindingInfo.DataType == BindingInfo.Types.DataType.Binary && _bindingInfo.IsMany())
+        if (_bindingInfo.DataType == BindingInfo.Types.DataType.Binary && _rawBindingInfo.IsMany())
         {
             if (body.Body.Bytes is { } bytes)
             {
