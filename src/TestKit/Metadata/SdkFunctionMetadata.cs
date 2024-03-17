@@ -18,5 +18,5 @@ internal class SdkFunctionMetadata
 
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
-    public Collection<ExpandoObject> Bindings { get; set; } = new Collection<ExpandoObject>();
+    public List<IDictionary<string, object>> Bindings { get; set; } = new List<IDictionary<string, object>>();
 }

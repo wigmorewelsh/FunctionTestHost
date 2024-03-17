@@ -172,9 +172,9 @@ internal class FunctionMetadataGenerator
         return function;
     }
 
-    private IEnumerable<ExpandoObject> CreateBindingMetadataAndAddExtensions(MethodInfo method)
+    private List<IDictionary<string, object>> CreateBindingMetadataAndAddExtensions(MethodInfo method)
     {
-        var bindingMetadata = new List<ExpandoObject>();
+        var bindingMetadata = new List<IDictionary<string, object>>();
 
         AddInputTriggerBindingsAndExtensions(bindingMetadata, method);
         AddOutputBindingsAndExtensions(bindingMetadata, method);
@@ -182,7 +182,7 @@ internal class FunctionMetadataGenerator
         return bindingMetadata;
     }
 
-    private void AddOutputBindingsAndExtensions(IList<ExpandoObject> bindingMetadata, MethodInfo method)
+    private void AddOutputBindingsAndExtensions(List<IDictionary<string, object>> bindingMetadata, MethodInfo method)
     {
         if (!TryAddOutputBindingFromMethod(bindingMetadata, method))
         {
@@ -190,7 +190,7 @@ internal class FunctionMetadataGenerator
         }
     }
 
-    private void AddOutputBindingsFromReturnType(IList<ExpandoObject> bindingMetadata, MethodInfo method)
+    private void AddOutputBindingsFromReturnType(List<IDictionary<string, object>> bindingMetadata, MethodInfo method)
     {
         Type? returnType = GetTaskElementType(method.ReturnType);
 
@@ -220,14 +220,14 @@ internal class FunctionMetadataGenerator
         }
     }
 
-    private static bool IsHttpTrigger(ExpandoObject bindingMetadata)
+    private static bool IsHttpTrigger(IDictionary<string, object> bindingMetadata)
     {
         return bindingMetadata.Any(kvp => string.Equals(kvp.Key, "Type", StringComparison.Ordinal)
                                           && string.Equals(kvp.Value?.ToString(), Constants.HttpTriggerBindingType,
                                               StringComparison.Ordinal));
     }
 
-    private bool TryAddOutputBindingsFromProperties(IList<ExpandoObject> bindingMetadata,
+    private bool TryAddOutputBindingsFromProperties(List<IDictionary<string, object>> bindingMetadata,
         Type typeDefinition)
     {
         bool foundHttpOutput = false;
@@ -255,7 +255,7 @@ internal class FunctionMetadataGenerator
         return bindingMetadata.Count > beforeCount;
     }
 
-    private void AddOutputBindingFromProperty(IList<ExpandoObject> bindingMetadata, PropertyInfo property,
+    private void AddOutputBindingFromProperty(List<IDictionary<string, object>> bindingMetadata, PropertyInfo property,
         string typeName)
     {
         bool foundOutputAttribute = false;
@@ -280,7 +280,7 @@ internal class FunctionMetadataGenerator
         }
     }
 
-    private bool TryAddOutputBindingFromMethod(IList<ExpandoObject> bindingMetadata, MethodInfo method)
+    private bool TryAddOutputBindingFromMethod(List<IDictionary<string, object>> bindingMetadata, MethodInfo method)
     {
         bool foundBinding = false;
 
@@ -306,7 +306,7 @@ internal class FunctionMetadataGenerator
         return foundBinding;
     }
 
-    private void AddInputTriggerBindingsAndExtensions(IList<ExpandoObject> bindingMetadata, MethodInfo method)
+    private void AddInputTriggerBindingsAndExtensions(List<IDictionary<string, object>> bindingMetadata, MethodInfo method)
     {
         foreach (ParameterInfo parameter in method.GetParameters())
         {
@@ -343,51 +343,49 @@ internal class FunctionMetadataGenerator
         }
     }
 
-    private static void AddOutputBindingMetadata(IList<ExpandoObject> bindingMetadata, CustomAttributeData attribute,
+    private static void AddOutputBindingMetadata(List<IDictionary<string, object>> bindingMetadata, CustomAttributeData attribute,
         Type parameterType, string? name = null)
     {
         AddBindingMetadata(bindingMetadata, attribute, parameterType, parameterName: name);
     }
 
-    private static void AddBindingMetadata(IList<ExpandoObject> bindingMetadata, CustomAttributeData attribute,
+    private static void AddBindingMetadata(List<IDictionary<string, object>> bindingMetadata, CustomAttributeData attribute,
         Type parameterType, string? parameterName)
     {
         string bindingType = GetBindingType(attribute);
 
-        ExpandoObject binding =
+        var binding =
             BuildBindingMetadataFromAttribute(attribute, bindingType, parameterType, parameterName);
         bindingMetadata.Add(binding);
     }
 
-    private static ExpandoObject BuildBindingMetadataFromAttribute(CustomAttributeData attribute, string bindingType,
+    private static Dictionary<string, object> BuildBindingMetadataFromAttribute(CustomAttributeData attribute, string bindingType,
         Type parameterType, string? parameterName)
     {
-        ExpandoObject binding = new ExpandoObject();
-
-        var bindingDict = (IDictionary<string, object>)binding;
+        var binding = new Dictionary<string, object>();
 
         if (!string.IsNullOrEmpty(parameterName))
         {
-            bindingDict["Name"] = parameterName!;
+            binding["Name"] = parameterName!;
         }
 
-        bindingDict["Type"] = bindingType;
-        bindingDict["Direction"] = GetBindingDirection(attribute);
+        binding["Type"] = bindingType;
+        binding["Direction"] = GetBindingDirection(attribute);
 
         // Is string parameter type
         if (IsStringType(parameterType.FullName))
         {
-            bindingDict["DataType"] = "String";
+            binding["DataType"] = "String";
         }
         // Is binary parameter type
         else if (IsBinaryType(parameterType.FullName))
         {
-            bindingDict["DataType"] = "Binary";
+            binding["DataType"] = "Binary";
         }
 
         foreach (var property in attribute.GetAllDefinedProperties())
         {
-            bindingDict.Add(property.Key, property.Value);
+            binding.Add(property.Key, property.Value);
         }
 
         // Determine if we should set the "Cardinality" property based on
@@ -403,13 +401,13 @@ internal class FunctionMetadataGenerator
         // Conversion rule
         //     "IsBatched": true => "Cardinality": "Many"
         //     "IsBatched": false => "Cardinality": "One"
-        if (bindingDict.TryGetValue(Constants.IsBatchedKey, out object isBatchedValue)
+        if (binding.TryGetValue(Constants.IsBatchedKey, out object isBatchedValue)
             && isBatchedValue is bool isBatched)
         {
             // Batching set to true
             if (isBatched)
             {
-                bindingDict["Cardinality"] = "Many";
+                binding["Cardinality"] = "Many";
                 // Throw if parameter type is *definitely* not a collection type.
                 // Note that this logic doesn't dictate what we can/can't do, and
                 // we can be more restrictive in the future because today some
@@ -418,11 +416,11 @@ internal class FunctionMetadataGenerator
                 {
                     if (dataType.Equals(BindingInfo.Types.DataType.String))
                     {
-                        bindingDict["DataType"] = "String";
+                        binding["DataType"] = "String";
                     }
                     else if (dataType.Equals(BindingInfo.Types.DataType.Binary))
                     {
-                        bindingDict["DataType"] = "Binary";
+                        binding["DataType"] = "Binary";
                     }
                 }
                 else
@@ -435,10 +433,10 @@ internal class FunctionMetadataGenerator
             // Batching set to false
             else
             {
-                bindingDict["Cardinality"] = "One";
+                binding["Cardinality"] = "One";
             }
 
-            bindingDict.Remove(Constants.IsBatchedKey);
+            binding.Remove(Constants.IsBatchedKey);
         }
 
         return binding;
@@ -607,14 +605,14 @@ internal class FunctionMetadataGenerator
             .Replace("OutputAttribute", string.Empty);
     }
 
-    private static void AddHttpOutputBinding(IList<ExpandoObject> bindingMetadata, string name)
+    private static void AddHttpOutputBinding(List<IDictionary<string, object>> bindingMetadata, string name)
     {
-        IDictionary<string, object> returnBinding = new ExpandoObject();
+        var returnBinding = new Dictionary<string, object>();
         returnBinding["Name"] = name;
         returnBinding["Type"] = "http";
         returnBinding["Direction"] = "Out";
 
-        bindingMetadata.Add((ExpandoObject)returnBinding);
+        bindingMetadata.Add(returnBinding);
     }
 
     private static void AddExtensionInfo(IDictionary<string, string> extensions, CustomAttributeData attribute)
