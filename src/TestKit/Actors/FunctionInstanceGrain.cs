@@ -191,8 +191,10 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
             var dataMapper = await TryCreateDataMapper(loadRequest);
 
-            if (dataMapper == null && TryGetAnyBinding(loadRequest, out var bindingName, out var bindingInfo))
-                dataMapper = new HttpDataMapper(bindingName, bindingInfo);
+            if (dataMapper == null && TryGetAnyBinding(loadRequest, out var bindingName, out var bindingInfo, out var rawBindingInfo))
+            {
+                dataMapper = new HttpDataMapper(bindingName, bindingInfo, rawBindingInfo);
+            }
             if (dataMapper == null) continue;
             _dataMappers[loadRequest.FunctionId] = dataMapper;
 
@@ -227,10 +229,16 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
         }
     }
 
-    private bool TryGetAnyBinding(RpcFunctionMetadata loadRequest, out string bindingName, out BindingInfo bindingInfo)
+    private bool TryGetAnyBinding(RpcFunctionMetadata loadRequest, out string bindingName, out BindingInfo bindingInfo, out Dictionary<string, string> rawBindingInfo)
     {
+        rawBindingInfo = null;
         foreach (var (key, value) in loadRequest.Bindings)
         {
+            if (loadRequest.TryGetRawBinding(key, out var rawBinding))
+            {
+                rawBindingInfo = rawBinding;
+            }
+            
             bindingName = key;
             bindingInfo = value;
             return true;
@@ -238,6 +246,7 @@ internal class FunctionInstanceGrain : Grain, IFunctionInstanceGrain
 
         bindingName = null;
         bindingInfo = null;
+        rawBindingInfo = null;
         return false;
     }
 
