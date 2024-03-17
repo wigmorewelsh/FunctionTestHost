@@ -22,6 +22,9 @@
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.13.0" OutputItemType="Analyzer" Condition="'$(TargetFramework)'=='net6.0'" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.13.0" OutputItemType="Analyzer" Condition="'$(TargetFramework)'=='net7.0'" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.16.4" OutputItemType="Analyzer" Condition="'$(TargetFramework)'=='net8.0'" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Grpc" Version="1.13.0" Condition="'$(TargetFramework)'=='net6.0'" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Grpc" Version="1.13.0" Condition="'$(TargetFramework)'=='net7.0'" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Grpc" Version="1.15.0" Condition="'$(TargetFramework)'=='net8.0'" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageVersion Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.6.0" Condition="'$(TargetFramework)'=='net6.0'" />
     <PackageVersion Include="Microsoft.Orleans.Server" Version="3.6.0" Condition="'$(TargetFramework)'=='net6.0'" />
