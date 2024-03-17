@@ -33,6 +33,12 @@ internal class MetadataClientRpc<TStartup> : BackgroundService
 {
     private readonly FunctionRpc.FunctionRpcClient _client;
     private readonly IOptions<GrpcWorkerStartupOptions> _options;
+    
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DictionaryKeyPolicy = JsonNamingPolicy.CamelCase
+    };
 
     public MetadataClientRpc(FunctionMetadataEndpoint.FunctionRpc.FunctionRpcClient client,
         IOptions<GrpcWorkerStartupOptions> options)
@@ -75,7 +81,7 @@ internal class MetadataClientRpc<TStartup> : BackgroundService
         {
             var bindingInfos = new Dictionary<string, BindingInfo>();
             var rawBindings = new List<string>();
-            foreach (IDictionary<string, object> binding in sdkFunctionMetadata.Bindings)
+            foreach (var binding in sdkFunctionMetadata.Bindings)
             {
                 var rawBinding = new Dictionary<string, string>();
                 foreach (var (key, value) in binding)
@@ -86,7 +92,7 @@ internal class MetadataClientRpc<TStartup> : BackgroundService
                     }
                 }
                 
-                rawBindings.Add(JsonSerializer.Serialize(rawBinding));
+                rawBindings.Add(JsonSerializer.Serialize(rawBinding, _jsonOptions));
 
                 bindingInfos[binding["Name"] as string] = new BindingInfo
                 {
