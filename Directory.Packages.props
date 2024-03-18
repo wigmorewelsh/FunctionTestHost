@@ -30,8 +30,8 @@
     <PackageVersion Include="Microsoft.Orleans.Server" Version="3.6.0" Condition="'$(TargetFramework)'=='net6.0'" />
     <PackageVersion Include="Microsoft.Orleans.Server" Version="7.2.0" Condition="'$(TargetFramework)'=='net7.0'" />
     <PackageVersion Include="Microsoft.Orleans.Server" Version="7.2.0" Condition="'$(TargetFramework)'=='net8.0'" />
-    <PackageVersion Include="Microsoft.Orleans.Serialization.Protobuf" Version="7.1.1" Condition="'$(TargetFramework)'=='net7.0'" />
-    <PackageVersion Include="Microsoft.Orleans.Serialization.Protobuf" Version="7.1.1" Condition="'$(TargetFramework)'=='net8.0'" />
+    <PackageVersion Include="Microsoft.Orleans.Serialization.Protobuf" Version="7.2.0" Condition="'$(TargetFramework)'=='net7.0'" />
+    <PackageVersion Include="Microsoft.Orleans.Serialization.Protobuf" Version="7.2.0" Condition="'$(TargetFramework)'=='net8.0'" />
     <PackageVersion Include="NSubstitute" Version="5.0.0" />
     <PackageVersion Include="Shouldly" Version="4.2.1" />
     <PackageVersion Include="Stateless" Version="5.14.0" />
