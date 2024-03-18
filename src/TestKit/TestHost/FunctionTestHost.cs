@@ -36,6 +36,7 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     private protected volatile bool _isInit;
     private protected AsyncLock _lock = new();
     private List<Action<ISiloBuilder>> _hostConfigs = new();
+    private StartupSubscriber? observer;
     public (int, int) HostPorts { get; protected set; }
 
     public FunctionTestHost()
@@ -136,9 +137,9 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
             await functionHost.Start(grainFactory);
     }
 
-    private class StartupSubscriber : IStatusSubscriber
+    private class StartupSubscriber : IStatusSubscriber 
     {
-        private TaskCompletionSource _tcs = new();
+        private TaskCompletionSource _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
         
         public Task Notify()
         {
@@ -155,6 +156,14 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         using var _ = await _lock.LockAsync();
         if (_isInit) return;
 
+        
+        await CreateServerInit();
+
+        _isInit = true;
+    }
+
+    private async Task CreateServerInit()
+    {
         var ports = TestClusterPortAllocator.Instance.AllocateConsecutivePortPairs(2);
 
         await StartHost(ports);
@@ -162,21 +171,26 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
         ConfigureTestHost(this);        
 
         await StartFunctions();
+        
+        await WaitForInit();
+    }
 
-        var observer = new StartupSubscriber();
+    private async Task WaitForInit()
+    {
+        observer = new StartupSubscriber();
+        
         var grainFactory = _host.Services.GetRequiredService<IGrainFactory>();
 #if NET6_0
         var observerRef = await grainFactory.CreateObjectReference<IStatusSubscriber>(observer);
-#else 
+#else
         var observerRef = grainFactory.CreateObjectReference<IStatusSubscriber>(observer);
 #endif
         var registory = grainFactory.GetGrain<IFunctionRegistoryGrain>(0);
         await registory.AddObserver(observerRef);
-        
-        await observer.Wait();
 
-        _isInit = true;
+        await observer.Wait();
     }
+
 
     private async Task<IPublicEndpoint> GetEndpointGrain(string functionName)
     {
