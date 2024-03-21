@@ -7,7 +7,7 @@ using Orleans.Serialization;
 
 namespace TestKit.TestHost;
 
-public class ProtobufNetSerializer : IExternalSerializer
+internal class ProtobufNetSerializer : IExternalSerializer
 {
     public bool IsSupportedType(Type itemType)
     {

@@ -13,4 +13,9 @@
     <None Include="../*.*" LinkBase="Root" />
   </ItemGroup>
 
+  
+  <ItemGroup>
+    <None Include="../.github/workflows/dotnet.yml" LinkBase="build" />
+    <None Include="../*.*" LinkBase="root" />
+  </ItemGroup>
 </Project>

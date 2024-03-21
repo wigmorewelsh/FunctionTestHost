@@ -19,6 +19,10 @@ public class NullConfigureFunctionTestHost : IConfigureFunctionTestHost
     public (int, int) HostPorts { get; }
 }
 
+/// <summary>
+/// The `FunctionTestHost<T>` is a simplified version of the `FunctionTestHost` that assumes you have a single function app under test.
+/// </summary>
+/// <typeparam name="TStartup"></typeparam>
 public class FunctionTestHost<TStartup> : FunctionTestHost, IConfigureFunctionTestHost
 {
     private FunctionTestApp<TStartup> _functionTestApp;

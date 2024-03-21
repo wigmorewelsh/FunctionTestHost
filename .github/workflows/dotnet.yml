@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -38,8 +37,24 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --no-restore --configuration Release
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        functionsdk: [ '1.9.0', '1.10.0', '1.11.0' ]
+        workerversion: [ '1.13.0', '1.14.0', '1.15.0', '1.16.0' ]
+
+    steps:
       - name: Test
         run: dotnet test --no-build --verbosity normal --configuration Release
+        env:
+          functionsdk: ${{ matrix.functionsdk }}
+          workerversion: ${{ matrix.workerversion }}
+  release:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    steps:
       - name: Pack
         run: dotnet pack --configuration Release
       - name: Create Release

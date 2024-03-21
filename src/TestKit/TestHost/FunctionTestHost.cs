@@ -27,6 +27,10 @@ public interface IFunctionTestHostBuilder
     void ConfigureHostExtensions(Action<IServiceCollection> serviceCollection);
 }
 
+/// <summary>
+/// The function test host is the entry point for the test kit.
+/// It is responsible for starting the function host and one or more function apps.
+/// </summary>
 public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsyncLifetime
 {
     private protected IHost _host;
