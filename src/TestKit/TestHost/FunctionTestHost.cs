@@ -1,12 +1,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AzureFunctionsRpcMessages;
 using Google.Protobuf;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -73,7 +77,6 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     }
 
 
-
     private protected async Task StartHost((int, int) ports)
     {
         _host = Host.CreateDefaultBuilder()
@@ -111,14 +114,15 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
                 {
                     builder.ConfigureServices(extension);
                 }
-                
             })
             .Build();
 
         await _host.StartAsync();
     }
 
-    protected virtual void ConfigureTestHost(IFunctionTestHostBuilder builder) { }
+    protected virtual void ConfigureTestHost(IFunctionTestHostBuilder builder)
+    {
+    }
 
     protected void AddFunction(FunctionTestApp functionTestApp)
     {
@@ -129,34 +133,34 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     {
         _hostExtensions.Add(serviceCollection);
     }
-    
+
     private protected async Task StartFunctions()
     {
         var grainFactory = _host.Services.GetRequiredService<IGrainFactory>();
-        foreach (var functionHost in _functionHosts) 
+        foreach (var functionHost in _functionHosts)
             await functionHost.Start(grainFactory);
     }
 
-    private class StartupSubscriber : IStatusSubscriber 
+    private class StartupSubscriber : IStatusSubscriber
     {
         private TaskCompletionSource _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        
+
         public Task Notify()
         {
             _tcs.TrySetResult();
             return Task.CompletedTask;
         }
-        
+
         public Task Wait() => _tcs.Task;
     }
-    
+
     public async Task CreateServer()
     {
         if (_isInit) return;
         using var _ = await _lock.LockAsync();
         if (_isInit) return;
 
-        
+
         await CreateServerInit();
 
         _isInit = true;
@@ -168,17 +172,17 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
 
         await StartHost(ports);
 
-        ConfigureTestHost(this);        
+        ConfigureTestHost(this);
 
         await StartFunctions();
-        
+
         await WaitForInit();
     }
 
     private async Task WaitForInit()
     {
         observer = new StartupSubscriber();
-        
+
         var grainFactory = _host.Services.GetRequiredService<IGrainFactory>();
 #if NET6_0
         var observerRef = await grainFactory.CreateObjectReference<IStatusSubscriber>(observer);
@@ -206,6 +210,60 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
     {
         await CreateServer();
         return _host.Services;
+    }
+
+    public HttpClient CreateClient()
+    {
+        return new HttpClientWrapper(this);
+    }
+
+    public async Task<HttpResponseMessage> CallFunction(HttpRequestMessage request)
+    {
+        var funcGrain = await GetEndpointGrain(request.RequestUri!.AbsolutePath.Trim('/')!);
+        var httpBody = new RpcHttp();
+        httpBody.Url = request.RequestUri!.AbsolutePath;
+        httpBody.Method = request.Method.ToString();
+        var reader = new MemoryStream();
+        if (request.Content != null)
+        {
+            await request.Content.CopyToAsync(reader);
+            reader.Position = 0;
+            httpBody.Body = new TypedData
+            {
+                Bytes = ByteString.CopyFrom(reader.ToArray())
+            };
+        }
+
+        foreach (var header in request.Headers)
+        {
+            // TODO: handle values with commas
+            httpBody.Headers.Add(header.Key, string.Join(",", header.Value));
+        }
+
+        var response = await funcGrain.Call(httpBody);
+        if (response.ReturnValue?.Http is { } http)
+        {
+            var httpResponse = new HttpResponseMessage(Enum.Parse<System.Net.HttpStatusCode>(http.StatusCode));
+            foreach (var header in http.Headers)
+            {
+                // httpResponse.Headers.Add(header.Key, header.Value);
+            } 
+            if (http.Body.Bytes is { } bytes)
+            {
+                var stream = new MemoryStream(Convert.FromBase64String(bytes.ToBase64()));
+                httpResponse.Content = new StreamContent(stream);
+            }
+            return httpResponse;
+        }
+
+        if (response.Result?.Exception is { } err)
+        {
+            // TODO: add stack trace
+            throw new HttpRequestException(err.Message);
+        } 
+        
+        // return response.Result.Result;
+        throw new NotImplementedException();
     }
 
     public async Task<string> CallFunction(string functionName, byte[]? getBytes)
@@ -239,6 +297,32 @@ public class FunctionTestHost : IFunctionTestHostBuilder, IAsyncDisposable, IAsy
 
     public void ConfigureHost(Action<ISiloBuilder> func)
     {
-       _hostConfigs.Add(func); 
+        _hostConfigs.Add(func);
+    }
+}
+
+class HttpClientWrapper : HttpClient
+{
+    private readonly FunctionTestHost _host;
+
+    public HttpClientWrapper(FunctionTestHost host) : base(new FunctionTestHostHandler(host))
+    {
+        _host = host;
+        BaseAddress = new Uri($"http://localhost");
+    }
+}
+
+internal class FunctionTestHostHandler : HttpMessageHandler
+{
+    private readonly FunctionTestHost _host;
+
+    public FunctionTestHostHandler(FunctionTestHost host)
+    {
+        _host = host;
+    }
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        return _host.CallFunction(request);
     }
 }
